@@ -1,0 +1,30 @@
+{
+  "ocs.internal": {
+    "reset": "upstream/dev",
+    "merge": [
+      "upstream/change/partsRefactor",
+      "upstream/feature/actionRenewing",
+      "upstream/feature/SKMiners",
+      "upstream/task/invasion",
+      "upstream/task/train-basic"
+    ]
+  },
+  "ocs.public": {
+    "reset": "upstream/dev",
+    "merge": [
+      "upstream/bug/roomCollapsedWaste",
+      "upstream/change/behaveYourselves",
+      "upstream/change/costMatrixCaching",
+      "upstream/change/pickingStrategyResources",
+      "upstream/change/remoteMinerStrategies",
+      "upstream/change/robustLv5MoreHaulers",
+      "upstream/change/updateFlagDir",
+      "upstream/change/visualsRefactor",
+      "upstream/debug/findCircular",
+      "upstream/fix/flagFilters",
+      "upstream/fix/minersRepair",
+      "upstream/fix/roomRecovery",
+      "upstream/task/labTechPartDeux"
+    ]
+  }
+}
