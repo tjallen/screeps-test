@@ -190,7 +190,8 @@ mod.extend = function(){
                 }
             }
             if( this.flee ) {
-                this.fleeMove();
+              var creep = this;
+                this.fleeMove(creep);
                 Creep.behaviour.ranger.heal(this);
                 if( SAY_ASSIGNMENT ) this.say(String.fromCharCode(10133), SAY_PUBLIC);
             }
@@ -224,7 +225,8 @@ mod.extend = function(){
     Creep.prototype.honkEvade = function(){
         if( HONK ) this.say('\u{1F500}\u{FE0E}', SAY_PUBLIC);
     };
-    Creep.prototype.fleeMove = function() {
+    Creep.prototype.fleeMove = function(creep) {
+        this.heal(creep);
         if( DEBUG && TRACE ) trace('Creep', {creepName:this.name, pos:this.pos, Action:'fleeMove', Creep:'run'});
         let drop = r => { if(this.carry[r] > 0 ) this.drop(r); };
         _.forEach(Object.keys(this.carry), drop);
