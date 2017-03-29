@@ -1,7 +1,7 @@
 const mod = new Creep.Behaviour('ranger');
 module.exports = mod;
 mod.run = function(creep) {
-    creep.flee = creep.flee || !creep.hasActiveBodyparts([ATTACK, RANGED_ATTACK]);
+    creep.flee = ((creep.flee) || (!creep.hasActiveBodyparts([ATTACK, RANGED_ATTACK])) || (creep.data.destiny.squad && creep.missingBodyparts() > 5));
     creep.attacking = false;
     creep.attackingRanged = false;
     // Assign next Action
@@ -22,7 +22,7 @@ mod.run = function(creep) {
     } else {
         logError('Creep without action/activity!\nCreep: ' + creep.name + '\ndata: ' + JSON.stringify(creep.data));
     }
-
+    // console.log(creep, 'isMissibng', creep.missingBodyparts());
     this.heal(creep);
 };
 mod.heal = function(creep){

@@ -225,6 +225,7 @@ mod.extend = function(){
         if( HONK ) this.say('\u{1F500}\u{FE0E}', SAY_PUBLIC);
     };
     Creep.prototype.fleeMove = function(creep) {
+      console.log(creep, 'fleeing');
         this.heal(creep);
         if( DEBUG && TRACE ) trace('Creep', {creepName:this.name, pos:this.pos, Action:'fleeMove', Creep:'run'});
         let drop = r => { if(this.carry[r] > 0 ) this.drop(r); };
