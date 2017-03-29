@@ -56,15 +56,17 @@ mod.extend = function(){
       // var squadFlag = Game.flags[creep.data.destiny.squad]
       // check if creeps from squad are already in room
       var squadMates = Memory.army[creep.data.destiny.squad].creeps;
+      var squadPositions = [];
+      squadMates.forEach((sm) => {
+        squadPositions.push(Game.creeps[sm.creepName].pos.roomName);
+      });
       var distanceTo;
       var leaderName = squadMates[0].creepName;
       var leader = Game.creeps[leaderName];
       var ret;
+      // if they're alive and in room, assume fighting + go join invasion fn
+      if (_.includes(squadPositions, invasionRoom)) return true;
       squadMates.forEach((sm) => {
-        // if they're alive and in room, assume fighting + go join invasion fn
-        if (Game.creeps[sm.creepName].pos.roomName === invasionRoom) {
-          ret = true;
-        } else
         // are they spawning? if so, wait
         if (Game.creeps[sm.creepName].spawning) {
           ret = false;
@@ -85,7 +87,6 @@ mod.extend = function(){
 
       // if all alive & not spawning, are they within distance of flag + creep?
       // return true
-      console.log(distanceTo);
     },
     Creep.prototype.squadRoleCall = function(creep) {
       // console.log('==== sqRC');
