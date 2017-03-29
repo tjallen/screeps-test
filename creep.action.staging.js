@@ -2,7 +2,11 @@ let action = new Creep.Action('staging');
 module.exports = action;
 action.isValidAction = function(creep) {
   // console.log('stg', 'isV', creep.ticksToLive < RENEW_THRESHOLD);
-  if (creep.ticksToLive < RENEW_TARGET) return true;
+  if (creep.ticksToLive < RENEW_TARGET) {
+    if (creep.pos.roomName === creep.data.destiny.stagingRoom) {
+      return true;
+    }
+  } 
 };
 action.isAddableAction = function(creep){ 
   // console.log('stg', 'isA', creep.pos.roomName === creep.data.destiny.stagingRoom);
@@ -28,12 +32,6 @@ action.newTarget = function(creep){
     return flag;
 };
 action.step = function(creep){
-  // console.log(creep, creep.target);
-    // if( creep.data.flagName )
-    //     return OK;
-    // else return ERR_INVALID_ARGS;
-    // TODO if TTL < 80%? && !boosted, move to nearest spawn for renew
-    // console.log(creep.ticksToLive);
     let boosted = false;
     creep.body.forEach((p) => {
       if (p.boost !== undefined) {
