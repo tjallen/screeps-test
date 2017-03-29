@@ -12,7 +12,7 @@ mod.extend = function(){
     Spawn.prototype.execute = function(){
         if( this.spawning ) return;
         
-        // check queue of creeps to renew ticksToLive
+/*        // check queue of creeps to renew ticksToLive
         var renewQueue = Memory.rooms[this.room.name].renewQueue;
         if (renewQueue) {
           var queueLength = renewQueue.length;
@@ -28,7 +28,7 @@ mod.extend = function(){
               // console.log(`${this.name} is renewing ${Game.creeps[c]}`);
             }
           });
-        };
+        };*/
 
         
         let room = this.room;
@@ -52,7 +52,7 @@ mod.extend = function(){
     };
     
     
-    // call in console to push a creep to the renew queue
+/*    // call in console to push a creep to the renew queue
     Spawn.prototype.renew = function(creep, begin = null) {
      try {
        if (!creep) {
@@ -65,15 +65,17 @@ mod.extend = function(){
          console.log('saving renewQueue in memory 1st time');
          Memory.rooms[this.room.name].renewQueue = [];
        }
+    
        Memory.rooms[this.room.name].renewQueue.forEach((item, index) => {
          console.log('renewQueue:', item);
+         console.log(Memory.rooms[this.room.name].renewQueue.length, 'items in queue');
          if (item === creep.name) {
            // console.log('dupe entry');
            // Memory.rooms[this.room.name].renewQueue.splice(index, 1);
            return;
          }
        });
-       Memory.rooms[this.room.name].renewQueue.push(creep.name);
+       // Memory.rooms[this.room.name].renewQueue.push(creep.name);
      }
      catch(e) {
        console.log(e);
@@ -97,14 +99,14 @@ mod.extend = function(){
      var renewAmount = Math.floor(600 / bodySize);
      if (this.renewCreep(creep) === -8) {
        if (Game.time % 10 === 0) {
-         logError(`${creep} TTL higher than renewAmount, waiting...`);
+         logError(`${creep} TTL ${remaining} higher than renewAmount ${renewAmount}, waiting...`);
        }
      } else {
        logError(`renewing ${creep} at ${renewAmount} per tick. TTL: ${creep.ticksToLive}`);
        this.renewCreep(creep);
      }
     }
-
+*/
     
     Spawn.prototype.createCreepBySetup = function(setup){
         if( DEBUG && TRACE ) trace('Spawn',{setupType:this.type, rcl:this.room.controller.level, energy:this.room.energyAvailable, maxEnergy:this.room.energyCapacityAvailable, Spawn:'createCreepBySetup'}, 'creating creep');
