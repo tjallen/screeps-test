@@ -9,8 +9,8 @@ action.isValidAction = function(creep){
 action.isAddableAction = function(creep){
   // if in squad, check for formation
   if (creep.data.destiny.squad) {
-    if (!creep.invasionFormationCheck(creep, 3)) {
-      logError('squad not prepared for invasion');
+    if (!creep.invasionFormationCheck(creep, 2)) {
+      // logError(creep, 'squad not prepared for invasion');
       return false;
     }
   }
@@ -97,7 +97,7 @@ action.newTarget = function(creep){
         // attack structures
         target = creep.pos.findClosestByPath(FIND_HOSTILE_STRUCTURES, {
             filter : (structure) => {
-                return structure.structureType != STRUCTURE_CONTROLLER;
+                return ((structure.structureType !== STRUCTURE_CONTROLLER) && ( structure.structureType !== STRUCTURE_KEEPER_LAIR));
             }
         });
         if( target )
@@ -147,6 +147,7 @@ action.run = {
             creep.attacking = creep.attack(creep.target) == OK;
     },
     ranger: function(creep){
+      // console.log(creep, creep.target);
         var range = creep.pos.getRangeTo(creep.target);
         if( !creep.flee ){
             if( creep.target instanceof Flag ){

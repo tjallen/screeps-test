@@ -48,45 +48,43 @@ mod.extend = function(){
         }
         return false;
     };
-    Creep.prototype.invasionFormationCheck = function(creep, distance) {
-      console.log('iFC', creep, distance);
-      // get room from invasion flag
-      var invasionFlag = FlagDir.find(FLAG_COLOR.invade, creep.pos, false);
-      var invasionRoom = invasionFlag.pos.roomName;
-      // var squadFlag = Game.flags[creep.data.destiny.squad]
-      // check if creeps from squad are already in room
-      var squadMates = Memory.army[creep.data.destiny.squad].creeps;
-      var squadPositions = [];
-      squadMates.forEach((sm) => {
-        squadPositions.push(Game.creeps[sm.creepName].pos.roomName);
-      });
-      var distanceTo;
-      var leaderName = squadMates[0].creepName;
-      var leader = Game.creeps[leaderName];
-      var ret;
-      // if they're alive and in room, assume fighting + go join invasion fn
-      if (_.includes(squadPositions, invasionRoom)) return true;
-      squadMates.forEach((sm) => {
-        // are they spawning? if so, wait
-        if (Game.creeps[sm.creepName].spawning) {
-          ret = false;
-        } else
-        // range check
-        if (leader.pos.getRangeTo(Game.creeps[sm.creepName]) > distance) {
-          ret = false;
-        } else {
-          ret = true;
+    Creep.prototype.missingBodyparts = function() {
+      const body = this.body;
+      const parts = body.length;
+      let activeParts = 0;
+      body.forEach((part) => {
+        if (part.hits > 0) {
+          activeParts++;
         }
       });
-      // return true;
-      return ret;
-      
-      // distanceTo = squadFlag.pos.getRangeTo(sm);
-      
-      // wait for 100% of alive / spawning creeps to be within distance of flag, then return true
+      if (activeParts < parts) return parts - activeParts;
+    };
+    Creep.prototype.invasionFormationCheck = function(creep, distance) {
+      // check that the squad is assembled to the correct size before invasion
+      var squadFlag = Game.flags[creep.data.destiny.squad];
+      var ret = false;
+      var squad = Memory.army[creep.data.destiny.squad].creeps;
+      var squadSize = squad.length;
+      var squadActual = [];
+      squad.forEach((sm) => {
+        squadActual.push(Game.creeps[sm.creepName]);
+      });
+      var validCreeps = [];
+      if (squadActual.length === squadSize) {
+        squadActual.forEach((sa) => {
+          if (!sa) return false;
+          var distanceToFlag = sa.pos.getRangeTo(squadFlag)
+          if ((!sa.spawning) && (distanceToFlag < distance)) {
+            validCreeps.push(sa);
+          }
+        })
+      }
 
-      // if all alive & not spawning, are they within distance of flag + creep?
-      // return true
+      if (validCreeps.length === squadSize) {
+        ret = true;
+      }
+      
+      return ret;
     },
     Creep.prototype.squadRoleCall = function(creep) {
       // console.log('==== sqRC');
