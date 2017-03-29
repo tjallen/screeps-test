@@ -81,11 +81,14 @@ let mod = {
       for (var j = 0; j < count; j++) {
         var creepName = `${squadName}-${type}`;
         var currentBuildRoom = buildRooms[roomIndex];
-        // check if its already in spawn queue
-/*        if (_.some(Memory.rooms[currentBuildRoom].spawnQueueHigh, { name: creepName })) {
-          console.log('creep already added to spawn queue');
-          continue;
-        }*/
+        // if spawning multiple, check if we have enough in queue already
+        var queuedCreepsOfType = _.filter(Memory.rooms[currentBuildRoom].spawnQueueHigh, {name: creepName});
+        if (queuedCreepsOfType.length) {
+          if (queuedCreepsOfType >= (count - 1)) {
+            console.log(creepName, `${queuedCreepsOfType} enough creeps of ${type} arleady in q ${count} ${Memory.rooms[currentBuildRoom].spawnQueueHigh.length}`);
+            continue;
+          }
+        }
         console.log(`building ${creepName} out of ${Game.rooms[currentBuildRoom]}`);
         Game.rooms[currentBuildRoom].spawnQueueHigh.push({
           parts: this.setups[type].fixedBody,
@@ -172,7 +175,7 @@ let mod = {
     });
   },
   reinforceSquad: function(squadName) {
-    this.cleanup(squadName);
+    // this.cleanup(squadName);
     // console.log('rS', squadName);
     var squad = Memory.army[squadName];
     if (!Memory.army[squadName].reinforce) {
@@ -186,7 +189,7 @@ let mod = {
         // console.log(`> REINFORCING: ${squadName} ${c.creepType} ${c.boosts} ${squad.reinforce} ${squad.buildRooms} ${squad.stagingRoom}`);
         Army.createSquad(squadName, [{ type: c.creepType, count: 1, boosts: c.boosts}], squad.reinforce, squad.buildRooms, squad.stagingRoom )
       } else {
-        // console.log(squadName, 'no need reinforce');
+        // console.log(c.creepName, Game.creeps[c.creepName].pos.roomName, Game.creeps[c.creepName].ticksToLive, 'no need reinforce');
       }
     });
   },
