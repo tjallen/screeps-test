@@ -48,50 +48,86 @@ mod.extend = function(){
         }
         return false;
     };
-    Creep.prototype.squadFormationCheck = function(creep, distance) {
-  console.log('sFM', creep, distance);
-},
-Creep.prototype.squadRoleCall = function(creep) {
-  // console.log('==== sqRC');
-  // check creep.data.squad
-  // check memory for this squad + array of all members
-  // check each member is alive - if undefined they're either spawning or dead
-  // check each member is in squad stagingRoom
-  // if so, return true, else false
-  if (!creep.data.destiny.squad) return;
-  var squad = creep.data.destiny.squad;
-  // console.log('c,s', creep, squad);
-  var memSquad = Memory.army[squad].creeps;
-  // console.log('mem', memSquad, 'creeps:', memSquad.length);
-  var inRoom = [];
-  memSquad.forEach((c) => {
-    let name = c.creepName;
-    if (!Game.creeps[name] || Game.creeps[name].spawning) {
-      // // console.log('squad not in room yet');
+    Creep.prototype.invasionFormationCheck = function(creep, distance) {
+      console.log('iFC', creep, distance);
+      // get room from invasion flag
+      var invasionFlag = FlagDir.find(FLAG_COLOR.invade, creep.pos, false);
+      var invasionRoom = invasionFlag.pos.roomName;
+      // var squadFlag = Game.flags[creep.data.destiny.squad]
+      // check if creeps from squad are already in room
+      var squadMates = Memory.army[creep.data.destiny.squad].creeps;
+      var distanceTo;
+      var leaderName = squadMates[0].creepName;
+      var leader = Game.creeps[leaderName];
+      var ret;
+      squadMates.forEach((sm) => {
+        // if they're alive and in room, assume fighting + go join invasion fn
+        if (Game.creeps[sm.creepName].pos.roomName === invasionRoom) {
+          ret = true;
+        } else
+        // are they spawning? if so, wait
+        if (Game.creeps[sm.creepName].spawning) {
+          ret = false;
+        } else
+        // range check
+        if (leader.pos.getRangeTo(Game.creeps[sm.creepName]) > distance) {
+          ret = false;
+        } else {
+          ret = true;
+        }
+      });
+      // return true;
+      return ret;
+      
+      // distanceTo = squadFlag.pos.getRangeTo(sm);
+      
+      // wait for 100% of alive / spawning creeps to be within distance of flag, then return true
+
+      // if all alive & not spawning, are they within distance of flag + creep?
+      // return true
+      console.log(distanceTo);
+    },
+    Creep.prototype.squadRoleCall = function(creep) {
+      // console.log('==== sqRC');
+      // check creep.data.squad
+      // check memory for this squad + array of all members
+      // check each member is alive - if undefined they're either spawning or dead
+      // check each member is in squad stagingRoom
+      // if so, return true, else false
+      if (!creep.data.destiny.squad) return;
+      var squad = creep.data.destiny.squad;
+      // console.log('c,s', creep, squad);
+      var memSquad = Memory.army[squad].creeps;
+      // console.log('mem', memSquad, 'creeps:', memSquad.length);
+      var inRoom = [];
+      memSquad.forEach((c) => {
+        let name = c.creepName;
+        if (!Game.creeps[name] || Game.creeps[name].spawning) {
+          // // console.log('squad not in room yet');
+          return false;
+        } 
+        let assigned = creep.data.destiny.stagingRoom;
+        let actual = Game.creeps[name].pos.roomName;
+        // assigned stagingRoom
+        // console.log('!', name, assigned);
+        // actual position
+        // console.log('>', actual);
+        // let pos = live.pos.roomName;
+        // // console.log(c.creep, live);
+        if (assigned === actual) {
+          inRoom.push(name);
+        };
+      });
+      // console.log(`eval => ${memSquad.length} | ${inRoom.length}`);
+      if (memSquad.length === inRoom.length) {
+        // console.log('sRC true');
+        return true;
+      }
+      // else
+      // console.log('sRC false');
       return false;
-    } 
-    let assigned = creep.data.destiny.stagingRoom;
-    let actual = Game.creeps[name].pos.roomName;
-    // assigned stagingRoom
-    // console.log('!', name, assigned);
-    // actual position
-    // console.log('>', actual);
-    // let pos = live.pos.roomName;
-    // // console.log(c.creep, live);
-    if (assigned === actual) {
-      inRoom.push(name);
-    };
-  });
-  // console.log(`eval => ${memSquad.length} | ${inRoom.length}`);
-  if (memSquad.length === inRoom.length) {
-    // console.log('sRC true');
-    return true;
-  }
-  // else
-  // console.log('sRC false');
-  return false;
-  // 
-}
+      // 
+    }
     Creep.prototype.run = function(behaviour){
         if( !this.spawning ){
             if(!behaviour && this.data && this.data.creepType) {

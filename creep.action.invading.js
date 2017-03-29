@@ -1,7 +1,21 @@
 let action = new Creep.Action('invading');
 module.exports = action;
-action.isValidAction = function(creep){ return FlagDir.hasInvasionFlag(); };
-action.isAddableAction = function(){ return true; };
+action.isValidAction = function(creep){
+  // check there's no retreat flag up
+  var retreat = FlagDir.find(FLAG_COLOR.invade.retreat, creep.pos, false);
+  if (retreat) return false;
+  return (FlagDir.hasInvasionFlag());
+};
+action.isAddableAction = function(creep){
+  // if in squad, check for formation
+  if (creep.data.destiny.squad) {
+    if (!creep.invasionFormationCheck(creep, 3)) {
+      logError('squad not prepared for invasion');
+      return false;
+    }
+  }
+  return true;
+};
 action.isAddableTarget = function(){ return true; };
 action.getFlaggedStructure = function(flagColor, pos){
     let flagsEntries = FlagDir.filter(flagColor, pos, true);
