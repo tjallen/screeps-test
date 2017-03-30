@@ -70,30 +70,42 @@ let mod = {
     if (!Game.flags[squadName]) {
       Game.rooms[stagingRoom].createFlag(pos, squadName, FLAG_COLOR.army.squad.color, FLAG_COLOR.army.squad.secondaryColor);
     } else {logError('squad already exists, must be a reinforce or err')}
+    var currentTypeName;
+    var currentTypeCount = 0;
+    var creepTypes = {};
     // for each type of creep
     for (var i = 0; i < creeps.length; i++) {
-      // console.log(JSON.stringify(creeps[i]));
+      console.log(JSON.stringify(creeps[i]));
       // console.log('squad builds out of:', buildRooms.length, buildRooms);
       // console.log('rI', buildRooms[roomIndex]);
       // for each individual creep of this creepType, push to buildQueue
       var count = creeps[i].count;
       var type = creeps[i].type;
+      creepTypes[type] = {
+        count,
+        boosts: creeps[i].boosts,
+      };
       for (var j = 0; j < count; j++) {
         var creepName = `${squadName}-${type}`;
         var currentBuildRoom = buildRooms[roomIndex];
-        // if spawning multiple, check if we have enough in queue already
+        currentTypeCount++;
+        currentTypeName = type;
+        console.log('=>>', count, type);
+        console.log(currentTypeName, currentTypeCount);
+/*        // if spawning multiple, check if we have enough in queue already
         var queuedCreepsOfType = _.filter(Memory.rooms[currentBuildRoom].spawnQueueHigh, {name: creepName});
         if (queuedCreepsOfType.length) {
           if (queuedCreepsOfType >= (count - 1)) {
             console.log(creepName, `${queuedCreepsOfType} enough creeps of ${type} arleady in q ${count} ${Memory.rooms[currentBuildRoom].spawnQueueHigh.length}`);
             continue;
           }
-        }
+        }*/
         console.log(`building ${creepName} out of ${Game.rooms[currentBuildRoom]}`);
         Game.rooms[currentBuildRoom].spawnQueueHigh.push({
           parts: this.setups[type].fixedBody,
           name:creepName,
           setup:type,
+          squadName,
           destiny: {
             squad: squadName,
             flagName: squadName,
@@ -120,6 +132,7 @@ let mod = {
         stagingRoom,
         reinforce,
         creeps: [],
+        creepTypes,
       };
     }
   },
@@ -179,19 +192,38 @@ let mod = {
     // console.log('rS', squadName);
     var squad = Memory.army[squadName];
     if (!Memory.army[squadName].reinforce) {
-      // console.log(squadName, 'reinforce=false, returning');
+      console.log(squadName, 'reinforce=false, returning');
       return;
     }
-    squad.creeps.forEach((c) => {
+    // get all registered creeps in squad
+    var creepsInSquad = _.filter(Memory.population, {destiny: {squad: squadName}});
+    // get each type
+    for(type in squad.creepTypes) {
+      // deduct existing creeps from the target count
+      var target = squad.creepTypes[type].count;
+      var existing = _.filter(creepsInSquad, {creepType: type});
+      // console.log('=> target:', type, target);
+      // console.log('=> existing:', existing.length);
+      var required = target - existing.length;
+      // console.log('=== required:', required);
+      // spawn in new creeps if required
+      if (required > 0) {
+        Army.createSquad(squadName, [{ type: type, count: required, boosts: squad.creepTypes[type].boosts}], squad.reinforce, squad.buildRooms, squad.stagingRoom );
+        console.log(`reinforcing ${required} creep`);
+      } else {
+        // console.log(`no need to reinforce ${required} creeps`);
+      }
+    }
+/*    squad.creeps.forEach((c) => {
       // console.log(c.creepName, c.creepType);
       if (!Game.creeps[c.creepName]) {
-        // console.log(c.creepName, 'is DEAD needs respawning');
+        console.log(c.creepName, 'is DEAD needs respawning');
         // console.log(`> REINFORCING: ${squadName} ${c.creepType} ${c.boosts} ${squad.reinforce} ${squad.buildRooms} ${squad.stagingRoom}`);
         Army.createSquad(squadName, [{ type: c.creepType, count: 1, boosts: c.boosts}], squad.reinforce, squad.buildRooms, squad.stagingRoom )
       } else {
-        // console.log(c.creepName, Game.creeps[c.creepName].pos.roomName, Game.creeps[c.creepName].ticksToLive, 'no need reinforce');
+        console.log(c.creepName, Game.creeps[c.creepName].pos.roomName, Game.creeps[c.creepName].ticksToLive, 'no need reinforce');
       }
-    });
+    });*/
   },
   // clearSquad: function(squad) {
   //   if (Memory.army[squad]) {
