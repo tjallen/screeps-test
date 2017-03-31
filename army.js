@@ -1,132 +1,85 @@
 
 let mod = {
-  // data: {
-  //   squads: [
-  //     squadName: {
-  //       creeps: [],
-  //       reinforce: true,
-  //       boostRoom: '',
-  //       buildRoom: '',
-  //       stagingFlag: Game.flags[''],
-  //       melee: [],
-  //       ranged: [],
-  //       healer: [],
-  //       dismantler: [],
-  //     }
-  //   ],
-  // },
-  setSquadTarget: function(squad, target) {
-    console.log('squadTarget', squad, target);
-    // create squad invasion flag at target (red/red or blue/red)
-    // creeps that are boosted or renewed head to this flag and invade
-  },
-  clearSquad: function(squad) {
-    console.log('clearing', squad);
-    var flag = Game.flags[squad];
-    var creeps = Memory.army[squad].creeps || null;
-    if (creeps.length) {
-      // assign recycling action to all in creeps if alive
-      creeps.forEach((c) => {
-        if (Game.creeps[c.creepName]) { Creep.action.recycling.assign(Game.creeps[c.creepName]);
-        }
-      });
+  /*
+    Push ONE creep for a squad into the spawn queue
+  */
+  spawnSingleSquadCreep(squadName, type, boosts, buildRoom, stagingRoom) {
+    var room = Game.rooms[buildRoom];
+    var creepName = `${squadName}-${type}`;
+    console.log(`[] [] [] => building ${creepName} out of ${buildRoom}`);
+    var newSpawn = {
+      parts: this.setups[type].fixedBody,
+      name:creepName,
+      setup:type,
+      squadName,
+      destiny: {
+        squad: squadName,
+        flagName: squadName,
+        targetName: squadName,
+        task: 'guard',
+        stagingRoom: stagingRoom,
+        boosts,
+      }
     }
-    if (Memory.army[squad]) { 
-      // clear the memory
-      delete Memory.army[squad];
-    }
-    // delete the flag
-    if (flag) flag.remove();
-    console.log(squad, 'deleted');
+    room.spawnQueueHigh.push(newSpawn);
   },
-  // Army.createSquad(`sq${Game.time}`, 1, 1, 1, 1, false, Game.rooms['W7N3'], Game.rooms['W7N3'], [TOUGH, MOVE],[TOUGH, MOVE],[TOUGH, MOVE],[TOUGH, MOVE] )
-  // Army.createSquad(`sq${Game.time}`, 1, 1, 1, 1, false, Game.rooms['W7N3'], Game.rooms['W7N3'] )
-  // Army.createSquad(`sq${Game.time}`, [{ type: 'melee', count: 1, boosts: [TOUGH]}, { type: 'healer', count: 1, boosts: [TOUGH]}, { type: 'dismanter', count: 1, boosts: [TOUGH]}, ], false, ['W7N3', 'W8N3'], 'W7N3' )
-  // Army.createSquad(`sq${Game.time}`, [{ type: 'melee', count: 1, boosts: [TOUGH]}, { type: 'healer', count: 1, boosts: [TOUGH]}], false, ['W7N3', 'W8N3'], 'W7N3' )
-  // Army.createSquad(`sq${Game.time}`, [{ type: 'melee', count: 1, boosts: [TOUGH, ATTACK]}, { type: 'ranger', count: 1, boosts: [TOUGH]}, { type: 'healer', count: 1, boosts: [TOUGH]}], false, ['W7N3', 'W8N3'], 'W7N3' )
-  createSquad: function(
-    squadName = 'squad1',
-    creeps,
-    reinforce = false,
-    buildRooms,
-    stagingRoom,
-    queue = 'High'
+  /*
+    Top level function to create a squad
+  */
+  createSquad: function(squadName, creeps, reinforce, buildRooms, stagingRoom
   ) {
-    // save army.squads into memory if first run
-    if (Memory.army === undefined) {
-      console.log('set army 1st time');
-      Memory.army = {};
-    };
-    // staging / build vars
-    var staging = Game.rooms[stagingRoom];
-    var roomIndex = 0; // for multi builds
-    // var buildRoom = buildRooms[roomIndex]; // default
-    var rotatingBuild = false;
-    if (buildRooms.length > 1) {
-      rotatingBuild = true;
-    }
+    // variables for rotating build through multiple rooms
+    var buildRoomIndex = 0;
+    var rotatingBuild = buildRooms.length > 1 ? true : false;
+    // type count object to populate & submit to registerSquad()
+    var creepTypes = {};
     // ensure room has a squad flag
     let pos = new RoomPosition(28, 12, Game.rooms[stagingRoom].name);
     if (!Game.flags[squadName]) {
       Game.rooms[stagingRoom].createFlag(pos, squadName, FLAG_COLOR.army.squad.color, FLAG_COLOR.army.squad.secondaryColor);
-    } else {logError('squad already exists, must be a reinforce or err')}
-    var currentTypeName;
-    var currentTypeCount = 0;
-    var creepTypes = {};
-    // for each type of creep
+    }
+    // loop each TYPE of creep
     for (var i = 0; i < creeps.length; i++) {
       console.log(JSON.stringify(creeps[i]));
-      // console.log('squad builds out of:', buildRooms.length, buildRooms);
-      // console.log('rI', buildRooms[roomIndex]);
-      // for each individual creep of this creepType, push to buildQueue
+      // just readability vars
       var count = creeps[i].count;
       var type = creeps[i].type;
+      var boosts = creeps[i].boosts;
       creepTypes[type] = {
         count,
-        boosts: creeps[i].boosts,
+        boosts,
       };
+      // loop each INDIVIDUAL CREEP of that type
       for (var j = 0; j < count; j++) {
-        var creepName = `${squadName}-${type}`;
-        var currentBuildRoom = buildRooms[roomIndex];
-        currentTypeCount++;
-        currentTypeName = type;
-        console.log('=>>', count, type);
-        console.log(currentTypeName, currentTypeCount);
-/*        // if spawning multiple, check if we have enough in queue already
-        var queuedCreepsOfType = _.filter(Memory.rooms[currentBuildRoom].spawnQueueHigh, {name: creepName});
-        if (queuedCreepsOfType.length) {
-          if (queuedCreepsOfType >= (count - 1)) {
-            console.log(creepName, `${queuedCreepsOfType} enough creeps of ${type} arleady in q ${count} ${Memory.rooms[currentBuildRoom].spawnQueueHigh.length}`);
-            continue;
-          }
-        }*/
-        console.log(`building ${creepName} out of ${Game.rooms[currentBuildRoom]}`);
-        Game.rooms[currentBuildRoom].spawnQueueHigh.push({
-          parts: this.setups[type].fixedBody,
-          name:creepName,
-          setup:type,
-          squadName,
-          destiny: {
-            squad: squadName,
-            flagName: squadName,
-            targetName: squadName,
-            task: 'guard',
-            stagingRoom: stagingRoom,
-            boosts: creeps[i].boosts
-          }
-        });
+        var buildRoom = buildRooms[buildRoomIndex]
+        // actually spawn the creep
+        this.spawnSingleSquadCreep(squadName, type, boosts, buildRoom, stagingRoom)
       }
-      // now update roomIndex so next creep is rotated
+      // now update buildRoomIndex so next creep is rotated
+      // increase index after each spawn or wrap back to 0 if at end of array
       if (rotatingBuild) {
-        if (roomIndex === (buildRooms.length - 1)) {
-          roomIndex = 0;
+        if (buildRoomIndex === (buildRooms.length - 1)) {
+          buildRoomIndex = 0;
         } else {
-          roomIndex++;
+          buildRoomIndex++;
         }
       }
     }
-    // initialise squad in memory if undefined
-    if (!Memory.army[squadName]) {
+    // finally update the Memory.army[squad]
+    Army.registerSquad(squadName, buildRooms, stagingRoom, reinforce, creepTypes);
+  },
+  /*
+    Register a squad in Memory.army
+  */
+  registerSquad: function(squadName, buildRooms, stagingRoom, reinforce, creepTypes) {
+    console.log(`===> registerSquad ${squadName} ${buildRooms} ${stagingRoom} ${reinforce}`);
+    // save army.squads into memory if first run
+    if (Memory.army === undefined) {
+      console.log('Memory.army was set for the first time');
+      Memory.army = {};
+    };
+    // initialise squad in memory if undefined or malformed object
+    if (!Memory.army[squadName] || Object.keys(Memory.army[squadName]).length === 0) {
       Memory.army[squadName] = {
         buildRooms,
         stagingRoom,
@@ -134,133 +87,139 @@ let mod = {
         creeps: [],
         creepTypes,
       };
-    }
+      console.log(`Memory.army[${squadName}] was set for the first time`);
+    };
   },
+  /*
+    Register a creep in Memory.army[squadName]
+  */
   registerCreep: function(squadName, creepName, creepType, boosts) {
-    console.log(`registerCreep ${creepName} ${squadName} ${creepType} ${boosts}`);
-    // check squad exists
+    console.log(`===> registerCreep ${creepName} ${squadName} ${creepType} ${boosts}`);
     if (Memory.army[squadName]) {
-      console.log('squad exists');
-      // iterate registered creeps
-      if (_.some(Memory.army[squadName].creeps, { creepName: creepName })) {
-        console.log('CREEP REGISTRED ALREADY');
-      } else {
-        console.log('not here, push');
-        Memory.army[squadName].creeps.push({ creepName, creepType, boosts });
-        console.log(creepName, 'army registered');
-      }
-      
-/*      Memory.army[squadName].creeps.forEach((c) => {
-        console.log('c', c);
-        // if one matches creepName, it's already reg'd, so return
-        if (c.creepName === creepName) {
-          // console.log(c.creepName, '=', creepName, 'already registered - leaving alone');
-          // return;
-          // if not. push to the memory
+      if (Memory.army[squadName].creeps) {
+        // is it already registered
+        if (_.some(Memory.army[squadName].creeps, { creepName: creepName })) {
+          console.log(creepName, 'registerCreep: was previously registered');
         } else {
-          // console.log('!', c.creepName, creepName);
+          // if not, push
           Memory.army[squadName].creeps.push({ creepName, creepType, boosts });
-          console.log(creepName, 'army registered');
+          console.log(creepName, 'registerCreep: creep successfully registered');
         }
-      });*/
+      } else {
+        logError(`registerCreep squad.creeps not found in ${squadName}`)
+      }
     } else {
-      console.log('squad doesnt exist', creepName, squadName, creepType, boosts);
+      logError(`registerCreep squad ${squadName} not found`)
     }
   },
-  // buildSquadCreep: function(squad, type, count, stagingRoom, boosts, queue) {
-  //   // for (var i = 1; i <= count; i++) {
-  //   //   
-  //   // }
-  //   // for (var i = 1; i <= meleeCount; i++) {
-  //   //   var creepName;
-  //   //   creepName = `MEL-${squadName}`;
-  //   //   room.spawnQueueHigh.push({parts:[TOUGH, MOVE, MOVE,ATTACK],name:creepName,setup:'melee', destiny: {squad: squadName, flagName: squadName, targetName: squadName, task: 'guard', stagingRoom: stagingRoom, boosts: boostsMelee}});
-  //   //   melee.creeps.push(`${creepName}-${i}`);
-  //   // }
-  // },
-  // Army.reinforceSquad('sq543469')
-  cleanup: function(squadName) {
-    var squad = Memory.army[squadName];
-    squad.creeps.forEach((c) => {
-      if (!Game.creeps[c]) {
-        // console.log(c, 'needs cleanup');
-      }
-    });
-  },
+  /*
+    Deduce number of creeps needed to respawn squad and add to build queues
+    // TODO respawn from cycled rooms as in createSquad() not just staging
+  */
   reinforceSquad: function(squadName) {
-    // this.cleanup(squadName);
-    // console.log('rS', squadName);
+  // console.log('===================', Game.time, 'rS', squadName);
     var squad = Memory.army[squadName];
     if (!Memory.army[squadName].reinforce) {
-      console.log(squadName, 'reinforce=false, returning');
+    // console.log(squadName, 'reinforce=false, returning');
       return;
     }
     // get all registered creeps in squad
     var creepsInSquad = _.filter(Memory.population, {destiny: {squad: squadName}});
-    // get each type
+    // iterate by type
     for(type in squad.creepTypes) {
-      // deduct existing creeps from the target count
+      // check number of existing creeps
       var target = squad.creepTypes[type].count;
-      var existing = _.filter(creepsInSquad, {creepType: type});
-      // console.log('=> target:', type, target);
-      // console.log('=> existing:', existing.length);
-      var required = target - existing.length;
-      // console.log('=== required:', required);
+      var existing = _.filter(creepsInSquad, {creepType: type}).length;
+      // check number of creeps in spawn queues
+      squad.buildRooms.forEach((room) => {
+        var queuedCreepsOfType = _.filter(Memory.rooms[room].spawnQueueHigh, {setup:type, destiny: {squad: squadName}});
+        // console.log('qC', queuedCreepsOfType.length);
+        if (queuedCreepsOfType.length) {
+          existing += queuedCreepsOfType.length;
+        }
+      });
+      // deduct existing creeps from the target count to get the difference
+      var required = (target - existing);
       // spawn in new creeps if required
       if (required > 0) {
-        Army.createSquad(squadName, [{ type: type, count: required, boosts: squad.creepTypes[type].boosts}], squad.reinforce, squad.buildRooms, squad.stagingRoom );
-        console.log(`reinforcing ${required} creep`);
+        // console.log(`=====> REINFORCE: (${type}: ${target} - ${existing}) = ${required}`);
+        for (let i = 0; i < required; i++) {
+          this.spawnSingleSquadCreep(squadName, type, squad.creepTypes[type].boosts, squad.stagingRoom, squad.stagingRoom)
+        }
       } else {
-        // console.log(`no need to reinforce ${required} creeps`);
+        // console.log(`=====> NOINF: (${type}: ${target} - ${existing}) = ${required}`);
       }
     }
-/*    squad.creeps.forEach((c) => {
-      // console.log(c.creepName, c.creepType);
-      if (!Game.creeps[c.creepName]) {
-        console.log(c.creepName, 'is DEAD needs respawning');
-        // console.log(`> REINFORCING: ${squadName} ${c.creepType} ${c.boosts} ${squad.reinforce} ${squad.buildRooms} ${squad.stagingRoom}`);
-        Army.createSquad(squadName, [{ type: c.creepType, count: 1, boosts: c.boosts}], squad.reinforce, squad.buildRooms, squad.stagingRoom )
-      } else {
-        console.log(c.creepName, Game.creeps[c.creepName].pos.roomName, Game.creeps[c.creepName].ticksToLive, 'no need reinforce');
-      }
-    });*/
   },
-  // clearSquad: function(squad) {
-  //   if (Memory.army[squad]) {
-  //     delete Memory.army[squad];
-  //     console.log(squad, 'deleted');
-  //   } else {
-  //     console.log('clearSquad failed on', squad);
-  //   }
-  // },
-  // clearSquads: function() {
-  //   Memory.army = {};
-  //   console.log('squads cleared');
-  // },
+  /*
+    Clear existing squad: Assign recycling action to squad creeps & clear Memory
+  */
+  clearSquad: function(squadName) {
+    console.log('=> [-] clearing', squadName);
+    var flag = Game.flags[squadName];
+    var creeps = Memory.army[squadName].creeps || null;
+    if (creeps.length) {
+      creeps.forEach((c) => {
+        if (Game.creeps[c.creepName]) { Creep.action.recycling.assign(Game.creeps[c.creepName]);
+        }
+      });
+    }
+    if (Memory.army[squadName]) { 
+      delete Memory.army[squadName];
+    }
+    if (flag) flag.remove();
+    console.log(`[X] => ${squadName} deleted`);
+  },
+
   setups: {
     ranger: {
-        fixedBody: [RANGED_ATTACK, MOVE],
+        fixedBody: [
+          TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+          HEAL
+        ],
         multiBody: [TOUGH, RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE],
         name: "ranger", 
         behaviour: "ranger", 
         queue: 'High'
     },
     melee: {
-        fixedBody: [ATTACK, MOVE],
+      fixedBody: [
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+        HEAL
+      ],
         multiBody: [TOUGH, ATTACK, ATTACK, MOVE, MOVE],
         name: "melee", 
         behaviour: "ranger", 
         queue: 'High'
     },
     healer: {
-        fixedBody: [HEAL, MOVE],
+      fixedBody: [
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL,
+      ],
         multiBody: [TOUGH, HEAL, HEAL, HEAL, MOVE, MOVE],
         name: "healer", 
         behaviour: "healer", 
         queue: 'High'
     },
     dismantler: {
-        fixedBody: [WORK, MOVE],
+      fixedBody: [
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK
+      ],
         multiBody: [TOUGH, WORK, WORK, MOVE, MOVE],
         name: "dismantler", 
         behaviour: "ranger", 
