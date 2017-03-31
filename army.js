@@ -6,7 +6,7 @@ let mod = {
   spawnSingleSquadCreep(squadName, type, boosts, buildRoom, stagingRoom) {
     var room = Game.rooms[buildRoom];
     var creepName = `${squadName}-${type}`;
-    console.log(`[] [] [] => building ${creepName} out of ${buildRoom}`);
+    console.log(`[] => building ${creepName} out of ${buildRoom}`);
     var newSpawn = {
       parts: this.setups[type].fixedBody,
       name:creepName,
@@ -28,9 +28,6 @@ let mod = {
   */
   createSquad: function(squadName, creeps, reinforce, buildRooms, stagingRoom
   ) {
-    // variables for rotating build through multiple rooms
-    var buildRoomIndex = 0;
-    var rotatingBuild = buildRooms.length > 1 ? true : false;
     // type count object to populate & submit to registerSquad()
     var creepTypes = {};
     // ensure room has a squad flag
@@ -49,12 +46,24 @@ let mod = {
         count,
         boosts,
       };
-      // loop each INDIVIDUAL CREEP of that type
-      for (var j = 0; j < count; j++) {
-        var buildRoom = buildRooms[buildRoomIndex]
-        // actually spawn the creep
-        this.spawnSingleSquadCreep(squadName, type, boosts, buildRoom, stagingRoom)
-      }
+      // spawn each INDIVIDUAL CREEP of that type
+      this.spawnMultipleSquadCreeps(count, squadName, type, boosts, buildRooms, stagingRoom);
+    }
+    // finally update the Memory.army[squad]
+    Army.registerSquad(squadName, buildRooms, stagingRoom, reinforce, creepTypes);
+  },
+  /*
+    Spawn single creep n times, rotate between rooms if buildRooms.length
+  */
+  spawnMultipleSquadCreeps: function(count, squadName, type, boosts, buildRooms, stagingRoom) {
+    console.log(`[] [] [] => mspawn: ${count} ${type} from ${buildRooms.length} rooms`);
+    // variables for rotating build through multiple rooms
+    var buildRoomIndex = 0;
+    var rotatingBuild = buildRooms.length > 1 ? true : false;
+    for (var i = 0; i < count; i++) {
+      var buildRoom = buildRooms[buildRoomIndex]
+      // actually spawn the creep
+      this.spawnSingleSquadCreep(squadName, type, boosts, buildRoom, stagingRoom);
       // now update buildRoomIndex so next creep is rotated
       // increase index after each spawn or wrap back to 0 if at end of array
       if (rotatingBuild) {
@@ -64,9 +73,7 @@ let mod = {
           buildRoomIndex++;
         }
       }
-    }
-    // finally update the Memory.army[squad]
-    Army.registerSquad(squadName, buildRooms, stagingRoom, reinforce, creepTypes);
+    };
   },
   /*
     Register a squad in Memory.army
@@ -114,7 +121,6 @@ let mod = {
   },
   /*
     Deduce number of creeps needed to respawn squad and add to build queues
-    // TODO respawn from cycled rooms as in createSquad() not just staging
   */
   reinforceSquad: function(squadName) {
   // console.log('===================', Game.time, 'rS', squadName);
@@ -143,9 +149,7 @@ let mod = {
       // spawn in new creeps if required
       if (required > 0) {
         // console.log(`=====> REINFORCE: (${type}: ${target} - ${existing}) = ${required}`);
-        for (let i = 0; i < required; i++) {
-          this.spawnSingleSquadCreep(squadName, type, squad.creepTypes[type].boosts, squad.stagingRoom, squad.stagingRoom)
-        }
+        this.spawnMultipleSquadCreeps(required, squadName, type, squad.creepTypes[type].boosts, squad.buildRooms, squad.stagingRoom);
       } else {
         // console.log(`=====> NOINF: (${type}: ${target} - ${existing}) = ${required}`);
       }
@@ -173,58 +177,86 @@ let mod = {
 
   setups: {
     ranger: {
-        fixedBody: [
-          TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-          RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-          HEAL
-        ],
+        fixedBody: [RANGED_ATTACK, MOVE],
         multiBody: [TOUGH, RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE],
         name: "ranger", 
         behaviour: "ranger", 
         queue: 'High'
     },
     melee: {
-      fixedBody: [
-        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-        MOVE, MOVE, MOVE, MOVE, MOVE,
-        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-        HEAL
-      ],
+        fixedBody: [ATTACK, MOVE],
         multiBody: [TOUGH, ATTACK, ATTACK, MOVE, MOVE],
         name: "melee", 
         behaviour: "ranger", 
         queue: 'High'
     },
     healer: {
-      fixedBody: [
-        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-        MOVE, MOVE, MOVE, MOVE, MOVE,
-        HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL,
-      ],
+        fixedBody: [HEAL, MOVE],
         multiBody: [TOUGH, HEAL, HEAL, HEAL, MOVE, MOVE],
         name: "healer", 
         behaviour: "healer", 
         queue: 'High'
     },
     dismantler: {
-      fixedBody: [
-        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-        MOVE, MOVE, MOVE, MOVE, MOVE,
-        WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK
-      ],
+        fixedBody: [WORK, MOVE],
         multiBody: [TOUGH, WORK, WORK, MOVE, MOVE],
         name: "dismantler", 
         behaviour: "ranger", 
         queue: 'High'
     },
+    // ranger: {
+    //     fixedBody: [
+    //       TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    //       MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+    //       MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+    //       MOVE, MOVE, MOVE, MOVE, MOVE,
+    //       RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    //       HEAL
+    //     ],
+    //     multiBody: [TOUGH, RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE],
+    //     name: "ranger", 
+    //     behaviour: "ranger", 
+    //     queue: 'High'
+    // },
+    // melee: {
+    //   fixedBody: [
+    //     TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+    //     MOVE, MOVE, MOVE, MOVE, MOVE,
+    //     ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    //     HEAL
+    //   ],
+    //     multiBody: [TOUGH, ATTACK, ATTACK, MOVE, MOVE],
+    //     name: "melee", 
+    //     behaviour: "ranger", 
+    //     queue: 'High'
+    // },
+    // healer: {
+    //   fixedBody: [
+    //     TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+    //     MOVE, MOVE, MOVE, MOVE, MOVE,
+    //     HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL,
+    //   ],
+    //     multiBody: [TOUGH, HEAL, HEAL, HEAL, MOVE, MOVE],
+    //     name: "healer", 
+    //     behaviour: "healer", 
+    //     queue: 'High'
+    // },
+    // dismantler: {
+    //   fixedBody: [
+    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+    //     MOVE, MOVE, MOVE, MOVE, MOVE,
+    //     WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK
+    //   ],
+    //     multiBody: [TOUGH, WORK, WORK, MOVE, MOVE],
+    //     name: "dismantler", 
+    //     behaviour: "ranger", 
+    //     queue: 'High'
+    // },
   },
 };
 
