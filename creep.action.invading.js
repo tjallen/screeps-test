@@ -1,17 +1,46 @@
 let action = new Creep.Action('invading');
 module.exports = action;
 action.isValidAction = function(creep){
+  // console.log('isV', FlagDir.hasInvasionFlag());
   // check there's no retreat flag up
-  var retreat = FlagDir.find(FLAG_COLOR.invade.retreat, creep.pos, false);
-  if (retreat) return false;
-  return (FlagDir.hasInvasionFlag());
+  if (creep.data.destiny.squad) {
+    var squadName = creep.data.destiny.squad;
+    // console.log('!');
+    // console.log(JSON.stringify(FlagDir.filter(FLAG_COLOR.invade, creep.pos, false)));
+    var retreatFlags = FlagDir.filter(FLAG_COLOR.invade.retreat, creep.pos, false);
+    if (retreatFlags.length) {
+      var matchedRetreatFlag = _.find(retreatFlags, {name: `_${squadName}`}, 0);
+      if (matchedRetreatFlag) return false;
+    }
+    var invasionFlags = FlagDir.filter(FLAG_COLOR.invade, creep.pos, false);
+    if (invasionFlags.length) {
+      var matchedInvasionFlag = _.find(invasionFlags, {name: `_${squadName}`}, 0);
+      if (matchedInvasionFlag) {
+        // console.log(creep, 'found flag', matchedInvasionFlag.name);
+        return true;
+      }
+    }
+  } else {
+    var retreat = FlagDir.find(FLAG_COLOR.invade.retreat, creep.pos, false);
+    if (retreat) return false;
+    var invasionFlags = FlagDir.filter(FLAG_COLOR.invade, creep.pos, false);
+    if (invasionFlags.length) {
+      if (invasionFlags[0].name.charAt(0) === '_') return false;
+      if (matchedInvasionFlag) {
+        // console.log(creep, 'found flag', matchedInvasionFlag.name);
+        return true;
+      }
+    }
+  }
 };
 action.isAddableAction = function(creep){
-  // if in squad, check for formation
   if (creep.data.destiny.squad) {
-    if (!creep.invasionFormationCheck(creep, 2)) {
-      // logError(creep, 'squad not prepared for invasion');
-      return false;
+    // check for formation
+    if (creep.pos.roomName === creep.data.destiny.stagingRoom) {
+      if (!creep.invasionFormationCheck(creep, 2)) {
+        // logError(creep, 'squad not prepared for invasion');
+        return false;
+      }
     }
   }
   return true;
@@ -61,6 +90,30 @@ action.newTarget = function(creep){
     }
 
     if( !flag.room.controller || !flag.room.controller.my ) {
+      
+/*      // pure healer rules
+    if (creep.hasActiveBodyparts([HEAL]) && !creep.hasActiveBodyparts([ATTACK, RANGED_ATTACK])) {
+        console.log(creep, 'pure healer');
+        // var creeps = creep.room.find(FIND_MY_CREEPS);
+        var casualties = _.filter(creep.room.find(FIND_MY_CREEPS), (c) => c.hits < c.hitsMax).sort((a, b) => a.hits - b.hits);
+        console.log(casualties);
+        if (casualties.length === 0) {
+          var dismantlers = _.filter(creep.room.find(FIND_MY_CREEPS), (c) => c.hasBodyparts[WORK]);
+          if (dismantlers.length) {
+            creep.target = (creep.pos.findClosestByPath(dismantlers));
+          } else {
+            var fighters = _.filter(creep.room.find(FIND_MY_CREEPS), (c) => c.hasBodyparts[ATTACK, RANGED_ATTACK]);
+            creep.target = (creep.pos.findClosestByPath(fighters));
+          }
+        } else {
+          creep.target = casualties[0];
+        }
+        
+  
+        // creep.pos.findClosestByPath(FIND_MY_CREEPS);
+        // creep.target = 
+        console.log('healer has run', creep, creep.target);
+      }
         //attack healer
         var target = creep.pos.findClosestByRange(creep.room.hostiles, {
             function(hostile){ return _.some(hostile.body, {'type': HEAL}); }
@@ -105,13 +158,59 @@ action.newTarget = function(creep){
         // attack construction sites
         target = creep.pos.findClosestByPath(FIND_HOSTILE_CONSTRUCTION_SITES);
         if( target )
-            return target;
+            return target;*/
+            
+            
+      // healer rules
+            
+      if (creep.hasActiveBodyparts([HEAL]) && !creep.hasActiveBodyparts([ATTACK, RANGED_ATTACK])) {
+          console.log(creep, 'pure healer', creep.hasBodyparts([HEAL]));
+          var creeps = creep.room.find(FIND_MY_CREEPS);
+          var casualties = _.filter(creeps, (c) => c.hits < c.hitsMax).sort((a, b) => a.hits - b.hits);
+          if (casualties.length === 0) {
+            var dismantlers = _.filter(creeps, (c) => c.hasBodyparts([WORK]));
+            if (dismantlers.length) {
+              creep.target = (creep.pos.findClosestByPath(dismantlers));
+            } else {
+              var fighters = _.filter(creeps, (c) => c.hasBodyparts([ATTACK, RANGED_ATTACK]));
+              if (fighters.length) {
+                creep.target = (creep.pos.findClosestByPath(fighters));
+              } else {
+                creep.target = creep.pos.findClosestByPath(creeps);
+              }
+              
+            }
+          } else {
+            creep.target = casualties[0];
+          }
+        } else {
+          // non healer rules
+          
+          // TODO if enemy within 5 tiles, go kill, UNLESS no path
+          var hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
+          if (hostiles.length) {
+            var closestHostile = creep.pos.findClosestByPath(hostiles);
+            var rangeToHostile = creep.pos.getRangeTo(closestHostile.pos.x, closestHostile.pos.y);
+            if (rangeToHostile <= 5) {
+              creep.target = closestHostile;
+            }
+          }
+
+          // TODO if orange/orange flag, go destroy that
+          // TODO if e > 5 tiles, move towards, UNLESS no path
+        }
+            
+
     }
+    
+    // console.log(`=> target calc ${creep}, ${creep.target}, ${debug}rng`);
+    
     // no target found
-    flag.remove();
-    return null;
+    // flag.remove();
+    // return null;
 };
 action.step = function(creep){
+  // console.log('step', creep);
     if(CHATTY) creep.say(this.name);
     if( (creep.target instanceof Flag) && (creep.target.pos.roomName == creep.pos.roomName))
         this.assign(creep);
@@ -119,6 +218,7 @@ action.step = function(creep){
 };
 action.run = {
   healer: function(creep){
+    
       if( !creep.flee ){
           if( creep.target instanceof Flag ){
               creep.travelTo( creep.target );
@@ -129,8 +229,9 @@ action.run = {
           }
           creep.travelTo( creep.target );
       }
-      if( !creep.target.my )
-          creep.attacking = creep.attack(creep.target) == OK;
+      if( creep.target.my ) 
+          creep.healing = creep.heal(creep.target) == OK;
+      console.log('===> RUN:', creep, creep.target);
   },
     melee: function(creep){
         if( !creep.flee ){
@@ -147,7 +248,7 @@ action.run = {
             creep.attacking = creep.attack(creep.target) == OK;
     },
     ranger: function(creep){
-      // console.log(creep, creep.target);
+      console.log('===> RUN:', creep, creep.target);
         var range = creep.pos.getRangeTo(creep.target);
         if( !creep.flee ){
             if( creep.target instanceof Flag ){
