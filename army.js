@@ -176,87 +176,87 @@ let mod = {
   },
 
   setups: {
-    ranger: {
-        fixedBody: [RANGED_ATTACK, MOVE],
-        multiBody: [TOUGH, RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE],
-        name: "ranger", 
-        behaviour: "ranger", 
-        queue: 'High'
-    },
-    melee: {
-        fixedBody: [ATTACK, MOVE],
-        multiBody: [TOUGH, ATTACK, ATTACK, MOVE, MOVE],
-        name: "melee", 
-        behaviour: "ranger", 
-        queue: 'High'
-    },
-    healer: {
-        fixedBody: [HEAL, MOVE],
-        multiBody: [TOUGH, HEAL, HEAL, HEAL, MOVE, MOVE],
-        name: "healer", 
-        behaviour: "healer", 
-        queue: 'High'
-    },
-    dismantler: {
-        fixedBody: [WORK, MOVE],
-        multiBody: [TOUGH, WORK, WORK, MOVE, MOVE],
-        name: "dismantler", 
-        behaviour: "ranger", 
-        queue: 'High'
-    },
     // ranger: {
-    //     fixedBody: [
-    //       TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-    //       MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-    //       MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-    //       MOVE, MOVE, MOVE, MOVE, MOVE,
-    //       RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-    //       HEAL
-    //     ],
+    //     fixedBody: [RANGED_ATTACK, MOVE],
     //     multiBody: [TOUGH, RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE],
     //     name: "ranger", 
     //     behaviour: "ranger", 
     //     queue: 'High'
     // },
     // melee: {
-    //   fixedBody: [
-    //     TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-    //     MOVE, MOVE, MOVE, MOVE, MOVE,
-    //     ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-    //     HEAL
-    //   ],
+    //     fixedBody: [ATTACK, MOVE],
     //     multiBody: [TOUGH, ATTACK, ATTACK, MOVE, MOVE],
     //     name: "melee", 
     //     behaviour: "ranger", 
     //     queue: 'High'
     // },
     // healer: {
-    //   fixedBody: [
-    //     TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-    //     MOVE, MOVE, MOVE, MOVE, MOVE,
-    //     HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL,
-    //   ],
+    //     fixedBody: [HEAL, MOVE],
     //     multiBody: [TOUGH, HEAL, HEAL, HEAL, MOVE, MOVE],
     //     name: "healer", 
     //     behaviour: "healer", 
     //     queue: 'High'
     // },
     // dismantler: {
-    //   fixedBody: [
-    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-    //     MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-    //     MOVE, MOVE, MOVE, MOVE, MOVE,
-    //     WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK
-    //   ],
+    //     fixedBody: [WORK, MOVE],
     //     multiBody: [TOUGH, WORK, WORK, MOVE, MOVE],
     //     name: "dismantler", 
     //     behaviour: "ranger", 
     //     queue: 'High'
     // },
+    ranger: {
+        fixedBody: [
+          TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+          HEAL
+        ],
+        multiBody: [TOUGH, RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE],
+        name: "ranger", 
+        behaviour: "ranger", 
+        queue: 'High'
+    },
+    melee: {
+      fixedBody: [
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+        HEAL
+      ],
+        multiBody: [TOUGH, ATTACK, ATTACK, MOVE, MOVE],
+        name: "melee", 
+        behaviour: "ranger", 
+        queue: 'High'
+    },
+    healer: {
+      fixedBody: [
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL,
+      ],
+        multiBody: [TOUGH, HEAL, HEAL, HEAL, MOVE, MOVE],
+        name: "healer", 
+        behaviour: "healer", 
+        queue: 'High'
+    },
+    dismantler: {
+      fixedBody: [
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK
+      ],
+        multiBody: [TOUGH, WORK, WORK, MOVE, MOVE],
+        name: "dismantler", 
+        behaviour: "ranger", 
+        queue: 'High'
+    },
   },
 };
 
