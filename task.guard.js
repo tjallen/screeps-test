@@ -83,6 +83,7 @@ mod.handleSpawningStarted = params => { // params: {spawn: spawn.name, name: cre
 };
 // when a creep completed spawning
 mod.handleSpawningCompleted = creep => {
+  if (creep.data.destiny && creep.data.destiny.squad !== undefined) return;
     // ensure it is a creep which has been requested by this task (else return)
     if (!creep.data || !creep.data.destiny || !creep.data.destiny.task || creep.data.destiny.task != 'guard')
         return;
