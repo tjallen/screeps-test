@@ -55,6 +55,10 @@ mod.FLAG_COLOR = {
         attackController: { // attack enemy controller and then claim
             color: COLOR_RED,
             secondaryColor: COLOR_CYAN,
+        },
+        retreat: {
+          color: COLOR_RED,
+          secondaryColor: COLOR_WHITE,
         }
     },
     //COLOR_PURPLE - Reserved labs

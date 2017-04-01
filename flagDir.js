@@ -133,6 +133,13 @@ mod.hasInvasionFlag = function(){
     return this._hasInvasionFlag;
 };
 
+mod.hasRetreatFlag = function(){
+    if( _.isUndefined(this._hasRetreatFlag) ) {
+        this._hasRetreatFlag = (this.findName(FLAG_COLOR.invade.retreat) != null) || (this.findName(FLAG_COLOR.destroy) != null);
+    }
+    return this._hasRetreatFlag;
+};
+
 mod.extend = function(){
     Object.defineProperty(Flag.prototype, 'cloaking', {
         configurable: true,
