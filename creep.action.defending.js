@@ -1,6 +1,10 @@
 let action = new Creep.Action('defending');
 module.exports = action;
-action.isValidAction = function(creep){ return creep.room.hostiles.length > 0; };
+action.isValidAction = function(creep) {
+  var retreat = FlagDir.find(FLAG_COLOR.invade.retreat, creep.pos, false);
+  if (retreat) return false;
+  return (creep.room.hostiles.length > 0);
+};
 action.isAddableAction = function(){ return true; };
 action.isAddableTarget = function(){ return true; };
 action.isValidTarget = function(target){
