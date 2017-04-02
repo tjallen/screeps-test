@@ -1,33 +1,32 @@
 let action = new Creep.Action('invading');
 module.exports = action;
-action.isValidAction = function(creep){
-  // console.log('isV', FlagDir.hasInvasionFlag());
-  // check there's no retreat flag up
+action.isValidAction = function(creep) {
+  // squad creep validity
   if (creep.data.destiny.squad) {
     var squadName = creep.data.destiny.squad;
-    // console.log('!');
-    // console.log(JSON.stringify(FlagDir.filter(FLAG_COLOR.invade, creep.pos, false)));
     var retreatFlags = FlagDir.filter(FLAG_COLOR.invade.retreat, creep.pos, false);
     if (retreatFlags.length) {
-      var matchedRetreatFlag = _.find(retreatFlags, {name: `_${squadName}`}, 0);
+      var matchedRetreatFlag = _.find(retreatFlags, {name: `${squadName}_ret`}, 0);
       if (matchedRetreatFlag) return false;
     }
     var invasionFlags = FlagDir.filter(FLAG_COLOR.invade, creep.pos, false);
     if (invasionFlags.length) {
-      var matchedInvasionFlag = _.find(invasionFlags, {name: `_${squadName}`}, 0);
+      var matchedInvasionFlag = _.find(invasionFlags, {name: `${squadName}_inv`}, 0);
       if (matchedInvasionFlag) {
         // console.log(creep, 'found flag', matchedInvasionFlag.name);
         return true;
       }
     }
   } else {
+    // other creep validity
     var retreat = FlagDir.find(FLAG_COLOR.invade.retreat, creep.pos, false);
     if (retreat) return false;
     var invasionFlags = FlagDir.filter(FLAG_COLOR.invade, creep.pos, false);
     if (invasionFlags.length) {
-      if (invasionFlags[0].name.charAt(0) === '_') return false;
-      if (matchedInvasionFlag) {
-        // console.log(creep, 'found flag', matchedInvasionFlag.name);
+      var nameLength = invasionFlags[0].name.length;
+      if (invasionFlags[0].name.charAt(nameLength - 3) === '_') {
+        return false;
+      } else {
         return true;
       }
     }
@@ -185,13 +184,14 @@ action.newTarget = function(creep){
           }
         } else {
           // non healer rules
+          var fightRange = 50;
           
           // TODO if enemy within 5 tiles, go kill, UNLESS no path
           var hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
           if (hostiles.length) {
             var closestHostile = creep.pos.findClosestByPath(hostiles);
             var rangeToHostile = creep.pos.getRangeTo(closestHostile.pos.x, closestHostile.pos.y);
-            if (rangeToHostile <= 5) {
+            if (rangeToHostile <= fightRange) {
               creep.target = closestHostile;
             }
           }
