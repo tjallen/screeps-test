@@ -63,52 +63,21 @@ mod.extend = function(){
       // check that the squad is assembled to the correct size before invasion
       var squadFlag = Game.flags[creep.data.destiny.squad];
       var invasionFlag = Game.flags[`${creep.data.destiny.squad}_inv`];
-      var ret = false;
-      var squad = Memory.army[creep.data.destiny.squad].creeps;
-      var squadSize = squad.length;
-      var squadActual = [];
-      squad.forEach((sm) => {
-        squadActual.push(Game.creeps[sm.creepName]);
+      var squad =  _.filter(Memory.population, {destiny: {squad: creep.data.destiny.squad}});
+      var creepsInInvasionRoom =  _.filter(squad, {roomName: invasionFlag.pos.roomName});
+      var creepsInStagingRoom =  _.filter(squad, {roomName: squadFlag.pos.roomName});
+      var creepsNearStagingFlag = 0;
+      creepsInStagingRoom.forEach((creep, i) => {
+        if (Game.creeps[creep.creepName].pos.getRangeTo(squadFlag) <= distance) {
+          creepsNearStagingFlag++;
+        }
       });
-      console.log('sA', squadActual);
-      var validCreeps = [];
-      var creepsAreFighting = false;
-      if (squadActual.length === squadSize) {
-        squadActual.forEach((sa) => {
-          // if not all creeps are spawned / queued we arent rdy
-          if (!sa) return false;
-          // is anyone in the invasion room already
-          // add up the creeps in invasion room
-          // to the creeps waiting near the flag
-          // if combined number is equal to the squad count, go
-          if (sa.pos.roomName === invasionFlag.pos.roomName) {
-            console.log(sa, 'is in invasion room');
-            validCreeps.push(sa);
-            creepsAreFighting = true;
-          } else {
-            var distanceToFlag = sa.pos.getRangeTo(squadFlag)
-            if ((!sa.spawning) && (distanceToFlag < distance)) {
-              validCreeps.push(sa);
-            }
-          }
-        })
+      // if entire squad is spread across invasion room + stagingRoom and near the flag, we go, otherwise wait
+      if (creepsInInvasionRoom.length + creepsNearStagingFlag >= squad.length) {
+        return true;
+      } else {
+        return false;
       }
-      if (creepsAreFighting) {
-        squadActual.forEach((sa) => {
-          if (sa.pos.roomName === squad.stagingRoom) {
-            var distanceToFlag = sa.pos.getRangeTo(squadFlag)
-            if ((!sa.spawning) && (distanceToFlag < distance)) {
-              validCreeps.push(sa);
-            }
-          }
-        })
-      }
-      // if all creeps are at flag, or all of the squad is inv/staging, we go
-      if (validCreeps.length === squadSize) {
-        ret = true;
-      }
-      
-      return ret;
     },
     Creep.prototype.squadRoleCall = function(creep) {
       // console.log('==== sqRC');
