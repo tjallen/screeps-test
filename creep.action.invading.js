@@ -18,13 +18,14 @@ action.isValidAction = function(creep) {
       }
     }
   } else {
+    
     // other creep validity
     var retreat = FlagDir.find(FLAG_COLOR.invade.retreat, creep.pos, false);
     if (retreat) return false;
     var invasionFlags = FlagDir.filter(FLAG_COLOR.invade, creep.pos, false);
     if (invasionFlags.length) {
       var nameLength = invasionFlags[0].name.length;
-      if (invasionFlags[0].name.charAt(nameLength - 3) === '_') {
+      if (invasionFlags[0].name.charAt(nameLength - 4) === '_') {
         return false;
       } else {
         return true;
@@ -37,7 +38,7 @@ action.isAddableAction = function(creep){
     // check for formation
     if (creep.pos.roomName === creep.data.destiny.stagingRoom) {
       if (!creep.invasionFormationCheck(creep, 2)) {
-        // logError(creep, 'squad not prepared for invasion');
+        logError(creep, 'squad not prepared for invasion');
         return false;
       }
     }

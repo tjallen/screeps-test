@@ -62,6 +62,7 @@ mod.extend = function(){
     Creep.prototype.invasionFormationCheck = function(creep, distance) {
       // check that the squad is assembled to the correct size before invasion
       var squadFlag = Game.flags[creep.data.destiny.squad];
+      var invasionFlag = Game.flags[`${creep.data.destiny.squad}_inv`];
       var ret = false;
       var squad = Memory.army[creep.data.destiny.squad].creeps;
       var squadSize = squad.length;
@@ -69,17 +70,40 @@ mod.extend = function(){
       squad.forEach((sm) => {
         squadActual.push(Game.creeps[sm.creepName]);
       });
+      console.log('sA', squadActual);
       var validCreeps = [];
+      var creepsAreFighting = false;
       if (squadActual.length === squadSize) {
         squadActual.forEach((sa) => {
+          // if not all creeps are spawned / queued we arent rdy
           if (!sa) return false;
-          var distanceToFlag = sa.pos.getRangeTo(squadFlag)
-          if ((!sa.spawning) && (distanceToFlag < distance)) {
+          // is anyone in the invasion room already
+          // add up the creeps in invasion room
+          // to the creeps waiting near the flag
+          // if combined number is equal to the squad count, go
+          if (sa.pos.roomName === invasionFlag.pos.roomName) {
+            console.log(sa, 'is in invasion room');
             validCreeps.push(sa);
+            creepsAreFighting = true;
+          } else {
+            var distanceToFlag = sa.pos.getRangeTo(squadFlag)
+            if ((!sa.spawning) && (distanceToFlag < distance)) {
+              validCreeps.push(sa);
+            }
           }
         })
       }
-
+      if (creepsAreFighting) {
+        squadActual.forEach((sa) => {
+          if (sa.pos.roomName === squad.stagingRoom) {
+            var distanceToFlag = sa.pos.getRangeTo(squadFlag)
+            if ((!sa.spawning) && (distanceToFlag < distance)) {
+              validCreeps.push(sa);
+            }
+          }
+        })
+      }
+      // if all creeps are at flag, or all of the squad is inv/staging, we go
       if (validCreeps.length === squadSize) {
         ret = true;
       }
@@ -225,7 +249,7 @@ mod.extend = function(){
         if( HONK ) this.say('\u{1F500}\u{FE0E}', SAY_PUBLIC);
     };
     Creep.prototype.fleeMove = function(creep) {
-      console.log(creep, 'fleeing');
+      // console.log(creep, 'fleeing');
         this.heal(creep);
         if( DEBUG && TRACE ) trace('Creep', {creepName:this.name, pos:this.pos, Action:'fleeMove', Creep:'run'});
         let drop = r => { if(this.carry[r] > 0 ) this.drop(r); };
@@ -233,13 +257,27 @@ mod.extend = function(){
         if( this.fatigue > 0 ) return;
         let path;
         if( !this.data.fleePath || this.data.fleePath.length < 2 || this.data.fleePath[0].x != this.pos.x || this.data.fleePath[0].y != this.pos.y || this.data.fleePath[0].roomName != this.pos.roomName ) {
-            let goals = _.map(this.room.hostiles, function(o) {
-                return { pos: o.pos, range: 5 };
+          var creeps = this.room.find(FIND_MY_CREEPS);
+          var healers = _.filter(creeps, (c) => c.hasBodyparts([HEAL]) && c.name !== this.name && c.data.creepType === 'healer');
+          var flee = true;
+          let goals;
+          if (healers.length) {
+            console.log(this.name, 'found healer', healers.length, healers[0]);
+            goals = _.map(healers, function(o) {
+                return { pos: o.pos };
             });
+            flee = false;
+          } else {
+            console.log(this.name, 'found hostiles', this.room.hostiles.length);
+            goals = _.map(this.room.hostiles, function(o) {
+                return { pos: o.pos, range: 6 };
+            });
+          }
+            console.log('fleeMove', goals, flee);
 
             let ret = PathFinder.search(
                 this.pos, goals, {
-                    flee: true,
+                    flee,
                     plainCost: 2,
                     swampCost: 10,
                     maxOps: 500,
@@ -253,13 +291,13 @@ mod.extend = function(){
                 }
             );
             path = ret.path;
-
+            console.log(path, path.length);
             this.data.fleePath = path;
         } else {
             this.data.fleePath.shift();
             path = this.data.fleePath;
         }
-        if( path && path.length > 0 )
+        if( path && path.length > 1 )
             this.move(this.pos.getDirectionTo(new RoomPosition(path[0].x,path[0].y,path[0].roomName)));
     };
     Creep.prototype.idleMove = function( ) {
