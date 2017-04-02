@@ -26,10 +26,10 @@ let mod = {
   /*
     Top level function to create a squad
   */
-  createSquad: function(squadName, creeps, reinforce, buildRooms, stagingRoom
+  populateSquad: function(squadName, creeps, reinforce, buildRooms, stagingRoom
   ) {
-    // type count object to populate & submit to registerSquad()
-    var creepTypes = {};
+    // initialise squad if required
+    Army.initSquad(squadName, buildRooms, stagingRoom, reinforce);
     // ensure room has a squad flag
     let pos = new RoomPosition(28, 12, Game.rooms[stagingRoom].name);
     if (!Game.flags[squadName]) {
@@ -39,28 +39,24 @@ let mod = {
     for (var i = 0; i < creeps.length; i++) {
       console.log(JSON.stringify(creeps[i]));
       // just readability vars
-      var count = creeps[i].count;
+      var spawnCount = creeps[i].count;
       var type = creeps[i].type;
       var boosts = creeps[i].boosts;
-      creepTypes[type] = {
-        count,
-        boosts,
-      };
+      // update TARGET creep counts
+      this.updateCreepCounts(squadName, type, null, spawnCount);
       // spawn each INDIVIDUAL CREEP of that type
-      this.spawnMultipleSquadCreeps(count, squadName, type, boosts, buildRooms, stagingRoom);
+      this.spawnMultipleSquadCreeps(spawnCount, squadName, type, boosts, buildRooms, stagingRoom);
     }
-    // finally update the Memory.army[squad]
-    Army.registerSquad(squadName, buildRooms, stagingRoom, reinforce, creepTypes);
   },
   /*
     Spawn single creep n times, rotate between rooms if buildRooms.length
   */
-  spawnMultipleSquadCreeps: function(count, squadName, type, boosts, buildRooms, stagingRoom) {
-    console.log(`[] [] [] => mspawn: ${count} ${type} from ${buildRooms.length} rooms`);
+  spawnMultipleSquadCreeps: function(spawnCount, squadName, type, boosts, buildRooms, stagingRoom) {
+    console.log(`[] [] [] => mspawn: ${spawnCount} ${type} from ${buildRooms.length} rooms`);
     // variables for rotating build through multiple rooms
     var buildRoomIndex = 0;
     var rotatingBuild = buildRooms.length > 1 ? true : false;
-    for (var i = 0; i < count; i++) {
+    for (var i = 0; i < spawnCount; i++) {
       var buildRoom = buildRooms[buildRoomIndex]
       // actually spawn the creep
       this.spawnSingleSquadCreep(squadName, type, boosts, buildRoom, stagingRoom);
@@ -78,8 +74,8 @@ let mod = {
   /*
     Register a squad in Memory.army
   */
-  registerSquad: function(squadName, buildRooms, stagingRoom, reinforce, creepTypes) {
-    console.log(`===> registerSquad ${squadName} ${buildRooms} ${stagingRoom} ${reinforce}`);
+  initSquad: function(squadName, buildRooms, stagingRoom, reinforce) {
+    console.log(`===> initSquad ${squadName} ${buildRooms} ${stagingRoom} ${reinforce}`);
     // save army.squads into memory if first run
     if (Memory.army === undefined) {
       console.log('Memory.army was set for the first time');
@@ -92,24 +88,53 @@ let mod = {
         stagingRoom,
         reinforce,
         creeps: [],
-        creepTypes,
+        creepTypes : {},
       };
       console.log(`Memory.army[${squadName}] was set for the first time`);
     };
+  },
+  /*
+    Update Memory.army[squadName].creepTypes.targetCount
+    currentCount not currently used; could be updated by the reinforceSquad check in future if required
+  */
+  updateCreepCounts: function(squadName, type, current, target) {
+    console.log(`===> updateCreepCounts ${squadName} ${type} c:${current} t:${target}`);
+    var squad = Memory.army[squadName];
+    if (squad) {
+      // initialise creepTypes if needed
+      if (!squad.creepTypes[type]) squad.creepTypes[type] = {};
+      var type = squad.creepTypes[type];
+      if (!type.currentCount) type.currentCount = 0;
+      if (!type.targetCount) type.targetCount = 0;
+      // iterate currentCount / targetCount
+      if (current) {
+        type.currentCount += current;
+        console.log(`currentCount iterated (${type.currentCount})`);
+      }
+      if (target) {
+        type.targetCount += target;
+        console.log(`targetCount iterated (${type.targetCount})`);
+      }
+    } else logError(`uCC() ${squadName} squad not found`)
   },
   /*
     Register a creep in Memory.army[squadName]
   */
   registerCreep: function(squadName, creepName, creepType, boosts) {
     console.log(`===> registerCreep ${creepName} ${squadName} ${creepType} ${boosts}`);
-    if (Memory.army[squadName]) {
-      if (Memory.army[squadName].creeps) {
+    var squad = Memory.army[squadName];
+    if (squad) {
+      if (!squad.creepTypes[creepType].boosts) {
+        squad.creepTypes[creepType].boosts = boosts;
+      }
+      // update creeps array
+      if (squad.creeps) {
         // is it already registered
-        if (_.some(Memory.army[squadName].creeps, { creepName: creepName })) {
+        if (_.some(squad.creeps, { creepName: creepName })) {
           console.log(creepName, 'registerCreep: was previously registered');
         } else {
           // if not, push
-          Memory.army[squadName].creeps.push({ creepName, creepType, boosts });
+          squad.creeps.push({ creepName, creepType, boosts });
           console.log(creepName, 'registerCreep: creep successfully registered');
         }
       } else {
@@ -133,13 +158,13 @@ let mod = {
     var creepsInSquad = _.filter(Memory.population, {destiny: {squad: squadName}});
     // iterate by type
     for(type in squad.creepTypes) {
+      var target = squad.creepTypes[type].targetCount;
       // check number of existing creeps
-      var target = squad.creepTypes[type].count;
       var existing = _.filter(creepsInSquad, {creepType: type}).length;
       // check number of creeps in spawn queues
       squad.buildRooms.forEach((room) => {
         var queuedCreepsOfType = _.filter(Memory.rooms[room].spawnQueueHigh, {setup:type, destiny: {squad: squadName}});
-        // console.log('qC', queuedCreepsOfType.length);
+        console.log('qC', queuedCreepsOfType.length);
         if (queuedCreepsOfType.length) {
           existing += queuedCreepsOfType.length;
         }
@@ -148,10 +173,10 @@ let mod = {
       var required = (target - existing);
       // spawn in new creeps if required
       if (required > 0) {
-        // console.log(`=====> REINFORCE: (${type}: ${target} - ${existing}) = ${required}`);
+        console.log(`=====> REINFORCE: (${type}: ${target} - ${existing}) = ${required}`);
         this.spawnMultipleSquadCreeps(required, squadName, type, squad.creepTypes[type].boosts, squad.buildRooms, squad.stagingRoom);
       } else {
-        // console.log(`=====> NOINF: (${type}: ${target} - ${existing}) = ${required}`);
+        console.log(`=====> NOINF: (${type}: ${target} - ${existing}) = ${required}`);
       }
     }
   },
