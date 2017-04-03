@@ -164,7 +164,7 @@ let mod = {
       // check number of creeps in spawn queues
       squad.buildRooms.forEach((room) => {
         var queuedCreepsOfType = _.filter(Memory.rooms[room].spawnQueueHigh, {setup:type, destiny: {squad: squadName}});
-        console.log('qC', queuedCreepsOfType.length);
+        // console.log('qC', queuedCreepsOfType.length);
         if (queuedCreepsOfType.length) {
           existing += queuedCreepsOfType.length;
         }
@@ -173,10 +173,10 @@ let mod = {
       var required = (target - existing);
       // spawn in new creeps if required
       if (required > 0) {
-        console.log(`=====> REINFORCE: (${type}: ${target} - ${existing}) = ${required}`);
+        // console.log(`=====> REINFORCE: (${type}: ${target} - ${existing}) = ${required}`);
         this.spawnMultipleSquadCreeps(required, squadName, type, squad.creepTypes[type].boosts, squad.buildRooms, squad.stagingRoom);
       } else {
-        console.log(`=====> NOINF: (${type}: ${target} - ${existing}) = ${required}`);
+        // console.log(`=====> NOINF: (${type}: ${target} - ${existing}) = ${required}`);
       }
     }
   },
@@ -186,17 +186,21 @@ let mod = {
   clearSquad: function(squadName) {
     console.log('=> [-] clearing', squadName);
     var flag = Game.flags[squadName];
-    var creeps = Memory.army[squadName].creeps || null;
-    if (creeps.length) {
+    var invasionFlag = Game.flags[`${squadName}_inv`];
+    var retreatFlag = Game.flags[`${squadName}_ret`];
+    if (flag) flag.remove();
+    if (invasionFlag) invasionFlag.remove();
+    if (retreatFlag) retreatFlag.remove();
+    var creeps = _.filter(Game.creeps, {data: {destiny: {squad: squadName}}});
+    if (creeps) {
       creeps.forEach((c) => {
-        if (Game.creeps[c.creepName]) { Creep.action.recycling.assign(Game.creeps[c.creepName]);
-        }
+        console.log(c.name);
+        Creep.action.recycling.assign(Game.creeps[c.name]);
       });
     }
     if (Memory.army[squadName]) { 
       delete Memory.army[squadName];
     }
-    if (flag) flag.remove();
     console.log(`[X] => ${squadName} deleted`);
   },
 
