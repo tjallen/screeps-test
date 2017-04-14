@@ -241,6 +241,34 @@ mod.extend = function(){
         else if (store > unloadTarget*1.05) ret = unloadTarget-store;
         return ret;
     };
+    StructureNuker.prototype.getNeeds = function(resourceType) {
+      // console.log(JSON.stringify(this.room.memory.resources, null, 2));
+        if (!this.room.memory.resources) {
+          // console.log(this.room, Game.getObjectById(this.id), 'nuker getNeeds returning 0');
+          return 0;
+        } else {
+          // console.log(this.room.memory.resources.nuker, 'OK');
+        }
+
+        // look up resource and calculate needs
+        let containerData = this.room.memory.resources.nuker.find( (s) => s.id == this.id );
+        if (containerData) {
+            let order = containerData.orders.find((o)=>{return o.type==resourceType;});
+            if (order) {
+              // needed here:
+              // deduct current energy / ghodium in nuker from order.storeAmount
+              // return that number
+            console.log(this, 'found order', JSON.stringify(order));
+                let loadTarget = Math.max(
+                  order.orderRemaining + (this[resourceType]||0), order.storeAmount
+                );    
+                let stored = this[resourceType];
+                console.log(this, 'found stored', JSON.stringify(stored));
+                return order.storeAmount - stored;
+            }
+        }
+        return 0;
+    };
     Object.defineProperty(StructureTerminal.prototype, 'sum', {
         configurable: true,
         get: function() {

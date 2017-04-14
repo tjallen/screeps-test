@@ -30,6 +30,8 @@ action.isValidAction = function(creep) {
       } else {
         return true;
       }
+    } else {
+      return false;
     }
   }
 };
@@ -38,7 +40,7 @@ action.isAddableAction = function(creep){
     // check for formation
     if (creep.pos.roomName === creep.data.destiny.stagingRoom) {
       if (!creep.invasionFormationCheck(creep, 2)) {
-        logError(creep, 'squad not prepared for invasion');
+        // logError(creep, 'squad not prepared for invasion');
         return false;
       }
     }
@@ -54,6 +56,7 @@ action.getFlaggedStructure = function(flagColor, pos){
         if( flag && flag.pos.roomName == pos.roomName && flag.room !== undefined ){ // room is visible
             var targets = flag.room.lookForAt(LOOK_STRUCTURES, flag.pos.x, flag.pos.y);
             if( targets && targets.length > 0){
+              console.log('ye');
                 addTarget = structure => {
                     structure.destroyFlag = flag;
                     target.push(structure);
@@ -191,7 +194,7 @@ action.newTarget = function(creep){
           var hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
           if (hostiles.length) {
             var closestHostile = creep.pos.findClosestByPath(hostiles);
-            var rangeToHostile = creep.pos.getRangeTo(closestHostile.pos.x, closestHostile.pos.y);
+            var rangeToHostile = creep.pos.getRangeTo(closestHostile.pos.x, closestHostile.pos.y); // error can occur here
             if (rangeToHostile <= fightRange) {
               creep.target = closestHostile;
             }
@@ -232,7 +235,7 @@ action.run = {
       }
       if( creep.target.my ) 
           creep.healing = creep.heal(creep.target) == OK;
-      console.log('===> RUN:', creep, creep.target);
+      if (Game.time % 5 === 0) console.log('===> RUN:', creep, creep.target);
   },
     melee: function(creep){
         if( !creep.flee ){
@@ -249,7 +252,7 @@ action.run = {
             creep.attacking = creep.attack(creep.target) == OK;
     },
     ranger: function(creep){
-      console.log('===> RUN:', creep, creep.target);
+      if (Game.time % 5 === 0) console.log('===> RUN:', creep, creep.target);
         var range = creep.pos.getRangeTo(creep.target);
         if( !creep.flee ){
             if( creep.target instanceof Flag ){

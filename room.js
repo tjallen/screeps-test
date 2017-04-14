@@ -1603,6 +1603,7 @@ Room.prototype.fillLabMinerals = function() {
         }
     };
     Room.prototype.updateResourceOrders = function () {
+      console.log('uRO');
         let data = this.memory.resources;
         if (!this.my || !data) return;
 
@@ -1610,6 +1611,7 @@ Room.prototype.fillLabMinerals = function() {
 
         // go through reallacation orders and reset completed orders
         for(let structureType in data) {
+          console.log(structureType);
             for(let i=0;i<data[structureType].length;i++) {
                 let structure = data[structureType][i];
                 // don't reset busy labs
@@ -1626,9 +1628,19 @@ Room.prototype.fillLabMinerals = function() {
                         let amount = 0;
                         let cont = Game.getObjectById(structure.id);
                         if (cont) {
+                          console.log(cont);
                             switch (structureType) {
                                 case STRUCTURE_LAB:
                                     // get lab amount
+                                    if (order.type == cont.mineralType) {
+                                        amount = cont.mineralAmount;
+                                    } else if (order.type == RESOURCE_ENERGY) {
+                                        amount = cont.energy;
+                                    }
+                                    break;
+                                case STRUCTURE_NUKER:
+                                console.log('nuker found');
+                                    // get nuker amnt
                                     if (order.type == cont.mineralType) {
                                         amount = cont.mineralAmount;
                                     } else if (order.type == RESOURCE_ENERGY) {
@@ -1659,6 +1671,7 @@ Room.prototype.fillLabMinerals = function() {
         }
     };
     Room.prototype.updateRoomOrders = function () {
+      console.log('updateRoomOrders');
         if (!this.memory.resources || !this.memory.resources.orders) return;
         let rooms = _.filter(Game.rooms, (room) => { return room.my && room.storage && room.terminal && room.name !== this.name; });
         let orders = this.memory.resources.orders;
@@ -2095,11 +2108,13 @@ Room.prototype.fillLabMinerals = function() {
     }
     Room.prototype.prepareResourceOrder = function(containerId, resourceType, amount) {
         let container = Game.getObjectById(containerId);
+        console.log('pRO', container);
         if (!this.my || !container || !container.room.name == this.name ||
                 !(container.structureType == STRUCTURE_LAB ||
                 container.structureType == STRUCTURE_POWER_SPAWN ||
                 container.structureType == STRUCTURE_CONTAINER ||
                 container.structureType == STRUCTURE_STORAGE ||
+                container.structureType == STRUCTURE_NUKER ||
                 container.structureType == STRUCTURE_TERMINAL)) {
             return ERR_INVALID_TARGET;
         }
@@ -2112,10 +2127,18 @@ Room.prototype.fillLabMinerals = function() {
                 powerSpawn: [],
                 container: [],
                 terminal: [],
-                storage: []
+                storage: [],
+                nuker: [],
             };
         }
+        if (container.structureType === STRUCTURE_NUKER) {
+          if (!this.memory.resources.nuker) {
+            this.memory.resources.nuker = [];
+            console.log('resources.nuker [] set');
+          }
+        }
         if (this.memory.resources.powerSpawn === undefined) this.memory.resources.powerSpawn = [];
+        console.log('>', !this.memory.resources[container.structureType]);
         if (!this.memory.resources[container.structureType].find( (s) => s.id == containerId )) {
             this.memory.resources[container.structureType].push(container.structureType==STRUCTURE_LAB ? {
                 id: containerId,
@@ -2177,6 +2200,8 @@ Room.prototype.fillLabMinerals = function() {
                 let containerStore = 0;
                 if ( container.structureType === STRUCTURE_LAB ) {
                     containerStore = (container.mineralType==resourceType) ? container.mineralAmount : 0;
+                } else if ( container.structureType === STRUCTURE_NUKER ) {
+                  console.log('its a nuker breh');
                 } else {
                     containerStore = (container.store[resourceType]||0);
                 }

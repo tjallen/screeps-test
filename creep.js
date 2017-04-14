@@ -63,6 +63,10 @@ mod.extend = function(){
       // check that the squad is assembled to the correct size before invasion
       var squadFlag = Game.flags[creep.data.destiny.squad];
       var invasionFlag = Game.flags[`${creep.data.destiny.squad}_inv`];
+      if (!squadFlag) {
+        Creep.action.recycling.assign(creep);
+        return;
+      } 
       var squad =  _.filter(Memory.population, {destiny: {squad: creep.data.destiny.squad}});
       var creepsInInvasionRoom =  _.filter(squad, {roomName: invasionFlag.pos.roomName});
       var creepsInStagingRoom =  _.filter(squad, {roomName: squadFlag.pos.roomName});
@@ -231,18 +235,18 @@ mod.extend = function(){
           var flee = true;
           let goals;
           if (healers.length) {
-            console.log(this.name, 'found healer', healers.length, healers[0]);
+            // console.log(this.name, 'found healer', healers.length, healers[0]);
             goals = _.map(healers, function(o) {
                 return { pos: o.pos };
             });
             flee = false;
           } else {
-            console.log(this.name, 'found hostiles', this.room.hostiles.length);
+            // console.log(this.name, 'found hostiles', this.room.hostiles.length);
             goals = _.map(this.room.hostiles, function(o) {
                 return { pos: o.pos, range: 6 };
             });
           }
-            console.log('fleeMove', goals, flee);
+            // console.log('fleeMove', goals, flee);
 
             let ret = PathFinder.search(
                 this.pos, goals, {

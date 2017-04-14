@@ -51,13 +51,8 @@ action.step = function(creep){
     
     if (creep.data.renewing) {
       if (creep.ticksToLive < RENEW_TARGET) {
-        // find nearest spawn
-        // move to spawn
         var spawns = creep.room.find(FIND_MY_SPAWNS).filter((s) => !s.spawning);
         var closeSpawn = creep.pos.findClosestByPath(spawns);
-        // creep.data.destiny.targetName = closeSpawn;
-        // creep.data.targetId = closeSpawn.id;
-        
         if (creep.pos.getRangeTo(closeSpawn) > 1) {
           creep.moveTo(closeSpawn)
         } else {
@@ -65,19 +60,18 @@ action.step = function(creep){
           var remaining = creep.ticksToLive;
           var totalLifeRequired = 1500 - remaining;
           var renewAmount = Math.floor(600 / bodySize);
-          if (closeSpawn.renewCreep(creep) === -8) {
+          if (closeSpawn.renewCreep(creep) !== 0) {
             if (Game.time % 10 === 0) {
-              logError(`${creep} totalLifeRequired ${totalLifeRequired} lower than renewAmount ${renewAmount}, waiting...`);
+              if (closeSpawn.renewCreep(creep) === -8) {
+                logError(`${creep} totalLifeRequired ${totalLifeRequired} lower than renewAmount ${renewAmount}, waiting...`);
+              } else {
+                logError('spawn renew error', closeSpawn.renewCreep(creep));
+              }
             }
           } else {
-            logError(`renewing ${creep} at ${renewAmount} per tick`);
+            console.log(`renewing ${creep} at ${renewAmount} per tick`);
             closeSpawn.renewCreep(creep);
           }
-          // console.log(creep, 'ready to renew', closeSpawn);
-          // console.log(Game.getObjectById(closeSpawn.id));
-/*          console.log(Game.getObjectById(closeSpawn.id).renewCreep(creep));
-          Game.getObjectById(closeSpawn.id).renewCreep(creep);*/
-          // console.log(closeSpawn, 'renewed', creep);
         }
       } else {
         creep.data.renewing = false;

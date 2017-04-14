@@ -1,6 +1,6 @@
 let mod = {
-    RENEW_THRESHOLD: 1200, // TTL at which to start staging (renewing)
-    RENEW_TARGET: 1475, // TTL at which fullRenew() concludes and staging
+    RENEW_THRESHOLD: 1300, // TTL at which to start staging (renewing)
+    RENEW_TARGET: 1450, // TTL at which fullRenew() concludes and staging
     CHATTY: true, // creeps say their current action
     HONK: true, // HONK when stored path is blocked by other creeps
     OOPS: true, // Creeps say Oops when dropping energy during dropmining
@@ -153,7 +153,7 @@ let mod = {
     DEFENSE_BLACKLIST: [], // Don't defend those rooms (add room names). Blocks spawning via defense task (will not prevent offensive actions at all)
     CRITICAL_BUCKET_LEVEL: 1000, // take action when the bucket drops below this value to prevent the bucket from actually running out
     CRITICAL_BUCKET_OVERFILL: 200, // Overfill the bucket by this amount before disabling CPU throttle, this can reduce thrashing because all creeps try to act at once
-    CRITICAL_ROLES: [ 'melee', 'ranger', 'healer', 'miner', 'hauler', 'upgrader' ], // when the bucket drops below the critical bucket level only these creep roles will be executed
+    CRITICAL_ROLES: [ 'worker', 'collapseWorker', 'melee', 'ranger', 'healer', 'miner', 'hauler', 'upgrader' ], // when the bucket drops below the critical bucket level only these creep roles will be executed
     ROBBER_REHOME: false, // May robbers choose closer storage for delivery?
     OBSERVER_OBSERVE_RANGE: 3, // the range for observers to look at
     OBSERVER_OBSERVE_HIGHWAYS_ONLY: true, // the observers will only look at highways - changing this will require you to clear cached rooms

@@ -1,7 +1,7 @@
 let action = new Creep.Action('reallocating');
 module.exports = action;
-action.maxPerTarget = 1;
-action.maxPerAction = 1;
+action.maxPerTarget = 3;
+action.maxPerAction = 3;
 action.getLabOrder = function(lab) {
     if (!lab) return null;
     var order = null;
@@ -25,8 +25,9 @@ action.getLabOrder = function(lab) {
 };
 action.findNeeding = function(room, resourceType, amountMin, structureId){
     if (!amountMin) amountMin = 1;
+    console.log('fN', room, resourceType, amountMin, structureId);
 //    if (!RESOURCES_ALL.find((r)=>{r==resourceType;})) return ERR_INVALID_ARGS;
-
+// console.log('realloc, findNeeding');
     const labs = room.structures.labs.all;
     if (labs.length > 0) {
         for (let i = 0; i < labs.length; i++) {
@@ -58,18 +59,36 @@ action.findNeeding = function(room, resourceType, amountMin, structureId){
     }
     const terminal = room.terminal;
     if (terminal) {
+      // console.log('realloC terminal');
         let amount = terminal.getNeeds(resourceType);
         if (amount >= amountMin && terminal.id != structureId) return { structure: terminal, amount: amount };
+    }
+    let nuker = room.structures.nuker;
+    if (nuker) {
+      // console.log('realloC nuker', nuker);
+        let amount = nuker.getNeeds(resourceType);
+        // results from nuker.getNeeds()
+        console.log(amount, 'nukerAmnt');
+        if (amount >= amountMin && nuker.id === structureId) {
+          console.log('getneeds returning NUKER');
+          return { structure: nuker, amount: amount };
+        } 
     }
     let storage = room.storage;
     if (storage) {
         let amount = storage.getNeeds(resourceType);
-        if (amount >= amountMin && storage.id != structureId) return { structure: storage, amount: amount };
+        if (amount >= amountMin && storage.id != structureId) {
+          console.log('getNeeds returning STORAGE');
+          return { structure: storage, amount: amount };
+        } 
     }
 
     // no specific needs found ... check for overflow availability
-    if (storage && (resourceType == RESOURCE_ENERGY || resourceType == RESOURCE_POWER) && storage.storeCapacity-storage.sum > amountMin)
-        return { structure: storage, amount: 0 };
+    if (storage && (resourceType == RESOURCE_ENERGY || resourceType == RESOURCE_POWER) && storage.storeCapacity-storage.sum > amountMin) {
+      console.log('no specific needs found ... check for overflow availability');
+      return { structure: storage, amount: 0 };
+    }
+        
     if (terminal && resourceType != RESOURCE_ENERGY && resourceType != RESOURCE_POWER && terminal.storeCapacity-terminal.sum > amountMin)
         return { structure: terminal, amount: 0 };
 
@@ -359,6 +378,60 @@ action.newTargetStorage = function(creep) {
     }
     return null;
 };
+action.newTargetNuker = function(creep) {
+  console.log('nTN', creep);
+  // check nuker for needs
+  // if there's a nuker, find energy/ghodium in the room.storage
+  let room = creep.room;
+  // check nuker for needs
+  let nuker = creep.room.structures.nuker;
+  if (nuker) {
+    console.log('nTN found', nuker);
+      // check for excess
+      var resources = ['energy', 'ghodium'];
+      resources.forEach((resource) => {
+        let amount = nuker.getNeeds(resource);
+        console.log('nuker.getNeeds', nuker.getNeeds(resource), resource);
+        if (amount > 0) {
+          console.log('getNeeds nTN', Game.getObjectById(nuker.id), creep.room, amount, resource, nuker.getNeeds(resource));
+            // excess resource found
+            if (DEBUG && TRACE) trace('Action', { actionName: 'reallocating', roomName: room.name, creepName: creep.name, structureId: nuker.id, resourceType: resource, needs: amount });
+            let dest = this.findNeeding(room, resource, 1, nuker.id);
+            console.log('dest', Game.getObjectById(dest.structure.id));
+            if (dest && dest.structure.id != nuker.id) {
+              console.log('dest conditional');
+                if (DEBUG && TRACE) trace('Action', { actionName: 'reallocating', roomName: room.name, creepName: creep.name, targetStructureId: dest.structure.id, resourceType: resource, targetNeeds: dest.amount });
+                console.log('=> dest.amnt', dest.amount, nuker.id);
+                // console.log(JSON.stringify(dest, null, 2));
+                creep.data.reallocating = resource;
+                console.log('creep.data.reallocating:', creep.data.reallocating);
+                return nuker;
+            }
+        }
+      });
+      // check orders
+/*      if (room.memory.resources && room.memory.resources.nuker[0]) {
+          let orders = room.memory.resources.nuker[0].orders.slice();
+          orders.push(RESOURCE_ENERGY);
+          let type = null;
+          let amount = 0;
+          for (var i=0;i<orders.length;i++) {
+              type = orders[i].type;
+              amount = nuker.getNeeds(type);
+              if (amount > 0) {
+                  // found a needed resource so check lower priority containers
+                  if (DEBUG && TRACE) trace('Action', { actionName: 'reallocating', roomName: room.name, creepName: creep.name, structureId: nuker.id, resourceType: type, needs: amount });
+                  if (room.storage && room.storage.store[type] && !(type==RESOURCE_ENERGY && room.storage.charge < 0.5)) {
+                      if (DEBUG && TRACE) trace('Action', { actionName: 'reallocating', roomName: room.name, creepName: creep.name, targetStructureId: room.storage.id, resourceType: type, targetNeeds: room.storage.store[type] });
+                      creep.data.reallocating = type;
+                      return nuker;
+                  }
+              }
+          }
+      }*/
+  }
+  return null;
+};
 action.isValidAction = function(creep){
     return true;
 };
@@ -366,7 +439,9 @@ action.isValidTarget = function(target){
     return true;
 };
 action.isAddableAction = function(creep){
+  return true;
     let pop = creep.room.population;
+    console.log('isAddable', (creep.sum == 0) && (!pop || !pop.actionCount[this.name] || pop.actionCount[this.name] < this.maxPerAction));
     return (creep.sum == 0) && (!pop || !pop.actionCount[this.name] || pop.actionCount[this.name] < this.maxPerAction);
 };
 action.isAddableTarget = function(target){
@@ -384,6 +459,7 @@ action.newTarget = function(creep){
             if (target === null) target = this.newTargetContainer(creep);
             if (target === null) target = this.newTargetTerminal(creep);
             if (target === null) target = this.newTargetStorage(creep);
+            if (target === null) target = this.newTargetNuker(creep);
         }
         return target;
     }
@@ -724,17 +800,48 @@ action.loadStorage = function(creep) {
     }
     return workResult;
 };
+action.loadNuker = function(creep) {
+  console.log(creep, 'loadNuker', creep.target);
+  let target = creep.target;
+  let room = creep.room;
+  var workResult = null;
+  var resource = null;
+  var amount = 0;
+  // drop off at store
+  for (var res in creep.carry) {
+      if (res && creep.carry[res] == 0) continue;
+      amount = target.getNeeds(res);
+      if (amount > 0) {
+          resource = res;
+          break;
+      }
+  }
+  if (resource) workResult = this.loadStructure(creep, target, resource, amount);
+
+  if ((creep.carry[resource]||0) > amount) {
+      this.assignDropOff(creep, resource);
+  } else {
+      this.cancelAction(creep);
+  }
+  return workResult;
+};
+action.unloadNuker = function(creep) {
+  console.log(creep, 'unloadNuker');
+};
 action.work = function(creep) {
     var workResult = null;
     let room = creep.room;
     let target = creep.target;
     let storage = room.storage;
     let terminal = room.terminal;
-
+console.log(creep, 'work');
     if (creep.sum == 0) {
         switch (target.structureType) {
             case STRUCTURE_LAB:
                 workResult = this.unloadLab(creep);
+                break;
+            case STRUCTURE_NUKER:
+                workResult = this.unloadStorage(creep);
                 break;
             case STRUCTURE_POWER_SPAWN:
                 // cannot unload a powerSpawn
@@ -757,6 +864,9 @@ action.work = function(creep) {
         switch (target.structureType) {
             case STRUCTURE_LAB:
                 workResult = this.loadLab(creep);
+                break;
+            case STRUCTURE_NUKER:
+                workResult = this.loadNuker(creep);
                 break;
             case STRUCTURE_POWER_SPAWN:
                 workResult = this.loadPowerSpawn(creep);
